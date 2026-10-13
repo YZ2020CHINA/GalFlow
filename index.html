@@ -1,0 +1,4211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GalFlow - 视觉小说剧本与无限画布流程图整理工具</title>
+  <style>
+    :root, [data-theme="dark"] {
+      color-scheme: dark;
+      --bg-dark: #12141a;
+      --bg-panel: #1a1d26;
+      --bg-panel-alt: #222634;
+      --bg-card: #202431;
+      --border-color: #2e3447;
+      --border-highlight: #4f5b7d;
+      --primary: #ff5e97;
+      --primary-hover: #ff75a6;
+      --primary-light: rgba(255, 94, 151, 0.15);
+      --secondary: #6366f1;
+      --secondary-light: rgba(99, 102, 241, 0.15);
+      --accent-cyan: #06b6d4;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #8b5cf6;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+      --canvas-grid: rgba(255, 255, 255, 0.05);
+      --badge-bg: #1e2230;
+      --badge-stroke: #334155;
+      --badge-text: #f1f5f9;
+      --group-header-bg: rgba(0, 0, 0, 0.2);
+      --preview-box-bg: #141722;
+      --hints-bg: rgba(26, 29, 38, 0.88);
+      --minimap-bg: rgba(18, 22, 32, 0.48);
+      --node-meta-bg: rgba(0, 0, 0, 0.18);
+    }
+
+    [data-theme="light"] {
+      color-scheme: light;
+      --bg-dark: #f6f4ee;
+      --bg-panel: #ffffff;
+      --bg-panel-alt: #ece8dd;
+      --bg-card: #ffffff;
+      --border-color: #ded8cb;
+      --border-highlight: #b5ad9a;
+      --primary: #f43f5e;
+      --primary-hover: #e11d48;
+      --primary-light: rgba(244, 63, 94, 0.12);
+      --secondary: #4f46e5;
+      --secondary-light: rgba(79, 70, 229, 0.12);
+      --accent-cyan: #0891b2;
+      --accent-green: #059669;
+      --accent-amber: #d97706;
+      --accent-purple: #7c3aed;
+      --text-main: #181d27;
+      --text-muted: #4b5568;
+      --text-dim: #718096;
+      --card-shadow: 0 8px 24px -4px rgba(60, 45, 30, 0.08), 0 2px 6px -1px rgba(60, 45, 30, 0.04);
+      --canvas-grid: rgba(60, 50, 40, 0.09);
+      --badge-bg: #ffffff;
+      --badge-stroke: #cfc9ba;
+      --badge-text: #181d27;
+      --group-header-bg: rgba(0, 0, 0, 0.04);
+      --preview-box-bg: #f3efe6;
+      --hints-bg: rgba(255, 255, 255, 0.92);
+      --minimap-bg: rgba(255, 255, 255, 0.52);
+      --node-meta-bg: rgba(0, 0, 0, 0.03);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOP HEADER */
+    header.app-header {
+      height: 54px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #ff5e97, #8b5cf6);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+      font-size: 18px;
+      box-shadow: 0 2px 10px rgba(255, 94, 151, 0.4);
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .project-name-input {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-main);
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      width: 190px;
+    }
+    .project-name-input:hover, .project-name-input:focus {
+      background: var(--bg-dark);
+      border-color: var(--border-highlight);
+      outline: none;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: var(--bg-panel-alt);
+      color: var(--text-main);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: #2b3144;
+      border-color: var(--border-highlight);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff5e97, #e11d48);
+      border-color: #ff5e97;
+      color: white;
+      box-shadow: 0 2px 8px rgba(255, 94, 151, 0.3);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #ff75a6, #f43f5e);
+      border-color: #ff75a6;
+    }
+
+    .btn-secondary {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+    }
+    .btn-secondary:hover {
+      background: rgba(99, 102, 241, 0.25);
+      border-color: #818cf8;
+      color: #c7d2fe;
+    }
+
+    .btn-accent {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+    }
+    .btn-accent:hover {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: #34d399;
+      color: #a7f3d0;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border-color: transparent;
+      color: var(--text-muted);
+    }
+    .btn-ghost:hover {
+      background: var(--bg-panel-alt);
+      color: var(--text-main);
+    }
+
+    .btn-icon {
+      padding: 6px 8px;
+    }
+
+    .divider-v {
+      width: 1px;
+      height: 20px;
+      background: var(--border-color);
+      margin: 0 3px;
+    }
+
+    /* MAIN AREA */
+    .app-main {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* LEFT SIDEBAR */
+    aside.sidebar {
+      width: 320px;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 25;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), width 0.25s ease;
+    }
+
+    aside.sidebar.collapsed {
+      transform: translateX(-320px);
+      width: 0;
+      border-right: none;
+    }
+
+    .sidebar-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sidebar-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sidebar-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-count {
+      font-size: 11px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    .search-box {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-box input {
+      width: 100%;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 7px 10px 7px 28px;
+      font-size: 12px;
+      color: var(--text-main);
+      outline: none;
+    }
+    .search-box input:focus {
+      border-color: var(--primary);
+    }
+    .search-icon {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 12px;
+    }
+
+    .sidebar-filter-tabs {
+      display: flex;
+      gap: 3px;
+      background: var(--bg-dark);
+      padding: 3px;
+      border-radius: 6px;
+    }
+    .filter-tab {
+      flex: 1;
+      text-align: center;
+      padding: 4px 4px;
+      font-size: 11px;
+      cursor: pointer;
+      border-radius: 4px;
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .filter-tab.active {
+      background: var(--bg-panel-alt);
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .chapter-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chapter-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .chapter-item:hover {
+      border-color: var(--border-highlight);
+      background: var(--bg-panel-alt);
+      transform: translateX(2px);
+    }
+
+    .chapter-item.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
+      background: rgba(255, 94, 151, 0.06);
+    }
+
+    .chapter-item-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chapter-tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .tag-prologue { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .tag-common { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .tag-branch { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .tag-route { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.4); }
+    .tag-ending { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+
+    .chapter-title-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .chapter-desc-text {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.4;
+    }
+
+    .chapter-item-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: var(--text-dim);
+      padding-top: 4px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .sidebar-footer {
+      padding: 10px 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      font-size: 11px;
+      color: var(--text-dim);
+      justify-content: center;
+    }
+
+    /* TOGGLE SIDEBAR BUTTON */
+    .sidebar-toggle-btn {
+      position: absolute;
+      left: 328px;
+      top: 12px;
+      z-index: 35;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      transition: all 0.2s;
+    }
+    aside.sidebar.collapsed ~ .sidebar-toggle-btn {
+      left: 12px;
+    }
+    .sidebar-toggle-btn:hover {
+      color: var(--text-main);
+      border-color: var(--border-highlight);
+    }
+
+    
+    
+    /* THEME SWITCH PILL COMPONENT */
+    .theme-switch-pill {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .theme-pill-btn {
+      padding: 4px 10px;
+      font-size: 11.5px;
+      font-weight: 500;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .theme-pill-btn:hover {
+      color: var(--text-main);
+    }
+
+    .theme-pill-btn.active {
+      background: var(--bg-panel);
+      color: var(--text-main);
+      font-weight: 700;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+      border-color: var(--border-color);
+    }
+
+    /* LEVEL TAGS */
+    .tag-level-1 { background: rgba(139, 92, 246, 0.2); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4); }
+    .tag-level-2 { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .tag-level-3 { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .tag-level-4 { background: rgba(255, 94, 151, 0.2); color: #f472b6; border: 1px solid rgba(255, 94, 151, 0.4); }
+    .tag-level-5 { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .tag-level-6 { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.4); }
+
+    .node-level-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #e2e8f0;
+      margin-left: 4px;
+    }
+
+    .chapter-item.tree-node {
+      border-left: 2px solid var(--border-color);
+    }
+    .chapter-item.tree-node:hover {
+      border-left-color: var(--primary);
+    }
+    .chapter-item.tree-node.active {
+      border-left-color: var(--primary);
+    }
+
+    /* RIGHT CANVAS AREA */
+    .canvas-viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      background-image: radial-gradient(var(--canvas-grid) 1.5px, transparent 1.5px);
+      background-size: 28px 28px;
+      cursor: grab;
+    }
+
+    .canvas-viewport.panning {
+      cursor: grabbing;
+    }
+    .canvas-viewport.selecting {
+      cursor: crosshair;
+    }
+
+    .canvas-world {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      transform-origin: 0 0;
+    }
+
+    /* MARQUEE SELECTION BOX */
+    .marquee-selection-box {
+      position: absolute;
+      border: 1.5px dashed var(--primary);
+      background: rgba(255, 94, 151, 0.12);
+      pointer-events: none;
+      z-index: 100;
+      display: none;
+      border-radius: 4px;
+    }
+
+    /* GROUPS LAYER (BEHIND NODES) */
+    .groups-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .canvas-group-box {
+      position: absolute;
+      border-radius: 16px;
+      pointer-events: all;
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      background: rgba(30, 36, 52, 0.45);
+      backdrop-filter: blur(2px);
+      transition: border-color 0.15s, background-color 0.15s;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .canvas-group-box:hover {
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .canvas-group-box.selected {
+      border-style: solid;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-light), 0 8px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .group-header {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: move;
+      border-top-left-radius: 14px;
+      border-top-right-radius: 14px;
+      background: var(--group-header-bg);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .group-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .group-tag-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      letter-spacing: 0.3px;
+    }
+
+    .group-title-input {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-main);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      outline: none;
+    }
+    .group-title-input:hover, .group-title-input:focus {
+      background: rgba(0, 0, 0, 0.3);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .group-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .group-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 12px;
+      padding: 4px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .group-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+
+    /* SVG CONNECTION LAYER - FIXED 1:1 WITH CANVAS WORLD */
+    .connections-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1px;
+      height: 1px;
+      overflow: visible;
+      pointer-events: none;
+      z-index: 8;
+    }
+
+    .connection-line {
+      fill: none;
+      stroke: #64748b;
+      stroke-width: 2.8px;
+      pointer-events: stroke;
+      cursor: pointer;
+      transition: stroke 0.2s, stroke-width 0.2s;
+    }
+
+    .connection-line:hover {
+      stroke: var(--primary);
+      stroke-width: 4.5px;
+    }
+
+    .connection-line.route-branch { stroke: #f59e0b; }
+    .connection-line.route-pink { stroke: #ff5e97; }
+    .connection-line.route-purple { stroke: #a855f7; }
+    .connection-line.route-cyan { stroke: #06b6d4; }
+
+    .connection-label {
+      pointer-events: all;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      fill: var(--badge-text);
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .connection-badge-bg {
+      fill: var(--badge-bg);
+      stroke: var(--badge-stroke);
+      stroke-width: 1px;
+      rx: 6;
+      ry: 6;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.15));
+    }
+    .connection-badge-bg:hover {
+      stroke: var(--primary);
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,0.25));
+    }
+
+    .drag-line {
+      stroke: var(--primary);
+      stroke-width: 3px;
+      stroke-dasharray: 6 4;
+      animation: dash 1s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes dash {
+      to { stroke-dashoffset: -10; }
+    }
+
+    /* CANVAS NODES */
+    .story-node {
+      position: absolute;
+      width: 320px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      cursor: default;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .story-node:hover {
+      border-color: var(--border-highlight);
+    }
+
+    .story-node.selected {
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 2px var(--primary), var(--card-shadow) !important;
+      z-index: 18;
+    }
+
+    .story-node.connect-target-highlight {
+      border-color: var(--accent-green) !important;
+      box-shadow: 0 0 0 3px var(--accent-green), 0 0 20px rgba(16, 185, 129, 0.4) !important;
+      transform: scale(1.02);
+      transition: transform 0.15s;
+    }
+
+    .story-node.dragging {
+      opacity: 0.95;
+      cursor: grabbing;
+      box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.7);
+    }
+
+    .node-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 11px 11px 0 0;
+      cursor: move;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .node-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .node-color-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--primary);
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .node-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-main);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .node-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .node-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+    .node-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-main);
+    }
+
+    /* PREVIEW IMAGE SECTION */
+    .node-preview {
+      position: relative;
+      width: 100%;
+      height: 145px;
+      background: var(--preview-box-bg);
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .node-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    .node-preview:hover img {
+      transform: scale(1.03);
+    }
+
+    .node-preview-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .node-preview:hover .node-preview-overlay {
+      opacity: 1;
+    }
+
+    .preview-action-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(4px);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+    }
+    .preview-action-btn:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* METADATA BADGES */
+    .node-meta {
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      background: var(--node-meta-bg);
+    }
+
+    .meta-tag {
+      font-size: 10.5px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--bg-panel-alt);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* SUMMARY BODY */
+    .node-body {
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .node-summary {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* BRANCHES & CHOICES */
+    .node-choices {
+      padding: 6px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .choices-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+
+    .choice-item {
+      background: var(--bg-panel-alt);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 8px 6px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11.5px;
+      position: relative;
+    }
+    .choice-item:hover {
+      border-color: var(--border-highlight);
+      background: #282d3e;
+    }
+
+    .choice-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      padding-right: 6px;
+    }
+
+    /* INTERACTIVE CONNECTION PORTS */
+    .port {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      z-index: 25;
+      cursor: crosshair;
+      transition: transform 0.15s, background-color 0.15s, box-shadow 0.15s;
+    }
+
+    .port:hover, .port.active-connecting {
+      transform: scale(1.35) !important;
+      box-shadow: 0 0 12px 2px currentColor !important;
+    }
+
+    .port-in {
+      top: 50%;
+      left: -8px;
+      transform: translateY(-50%);
+      background: var(--accent-cyan);
+      border: 2px solid var(--bg-card);
+      color: var(--accent-cyan);
+    }
+    .port-in:hover {
+      transform: translateY(-50%) scale(1.35) !important;
+    }
+
+    .port-out-default {
+      top: 50%;
+      right: -8px;
+      transform: translateY(-50%);
+      background: var(--primary);
+      border: 2px solid var(--bg-card);
+      color: var(--primary);
+    }
+    .port-out-default:hover {
+      transform: translateY(-50%) scale(1.35) !important;
+    }
+
+    .choice-port-btn {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent-amber);
+      border: 2.5px solid var(--bg-panel);
+      color: var(--accent-amber);
+      cursor: crosshair;
+      flex-shrink: 0;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .choice-port-btn:hover, .choice-port-btn.active-connecting {
+      transform: scale(1.35);
+      box-shadow: 0 0 10px var(--accent-amber);
+    }
+
+    /* FLOATING MULTI-SELECTION TOOLBAR */
+    .selection-action-bar {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-70px);
+      background: var(--bg-panel);
+      border: 1px solid var(--border-highlight);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      border-radius: 10px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 45;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: all;
+    }
+    .selection-action-bar.visible {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* CANVAS CONTROLS (FLOAT) */
+    .canvas-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      padding: 4px;
+      gap: 2px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+      z-index: 40;
+    }
+
+    .canvas-control-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+    .canvas-control-btn:hover {
+      background: var(--bg-panel-alt);
+      color: var(--text-main);
+    }
+    .canvas-control-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .zoom-text {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 0 8px;
+      min-width: 48px;
+      text-align: center;
+    }
+
+    /* INTERACTIVE MINI MAP (HORIZONTAL PANORAMA & TRANSLUCENT) */
+    .minimap-container {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      height: 92px;
+      background: var(--minimap-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+      z-index: 40;
+      cursor: pointer;
+      transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, opacity 0.2s ease;
+      opacity: 0.88;
+    }
+    .minimap-container:hover {
+      opacity: 1;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+    }
+    .minimap-container.wide {
+      width: 480px;
+    }
+
+    .minimap-header-row {
+      position: absolute;
+      top: 5px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .minimap-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-dim);
+      background: rgba(0, 0, 0, 0.18);
+      padding: 1px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.3px;
+    }
+    [data-theme="light"] .minimap-badge {
+      background: rgba(0, 0, 0, 0.05);
+      color: var(--text-muted);
+    }
+    .minimap-expand-btn {
+      pointer-events: all;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 10.5px;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .minimap-expand-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+    }
+    [data-theme="light"] .minimap-expand-btn:hover {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .minimap-canvas {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .minimap-viewport-rect {
+      position: absolute;
+      border: 2px solid var(--primary);
+      background: rgba(255, 94, 151, 0.22);
+      cursor: move;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(255, 94, 151, 0.45);
+      min-width: 18px;
+      min-height: 16px;
+      box-sizing: border-box;
+    }
+
+    /* HINTS */
+    .canvas-hints {
+      position: absolute;
+      top: 14px;
+      right: 20px;
+      background: var(--hints-bg);
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 30;
+      pointer-events: none;
+    }
+    .hint-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .hint-key {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* MODAL WINDOWS */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      width: 720px;
+      max-width: 92vw;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: scale(0.96);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .modal-overlay.open .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+    .form-row > * {
+      flex: 1;
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .form-input, .form-textarea, .form-select {
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+    }
+    .form-input:focus, .form-textarea:focus, .form-select:focus {
+      border-color: var(--primary);
+    }
+    .form-textarea {
+      min-height: 85px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: var(--node-meta-bg);
+    }
+
+    /* CHOICE EDIT TABLE */
+    .choices-edit-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+    }
+    .choices-edit-table th {
+      text-align: left;
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 4px 6px;
+    }
+    .choices-edit-table td {
+      padding: 4px;
+    }
+
+    /* GALGAME TEXT PREVIEW BOX */
+    .gal-dialogue-preview {
+      background: var(--preview-box-bg);
+      border: 1px solid #232838;
+      border-radius: 8px;
+      padding: 12px 14px;
+      position: relative;
+      margin-top: 6px;
+      min-height: 75px;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+    .gal-char-name-plate {
+      display: inline-block;
+      background: linear-gradient(90deg, #ff5e97, #8b5cf6);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      box-shadow: 0 2px 6px rgba(255, 94, 151, 0.3);
+    }
+    .gal-text-content {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #e2e8f0;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 200;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast-success { border-color: var(--accent-green); }
+    .toast-info { border-color: var(--secondary); }
+
+    /* HIDDEN FILE INPUT */
+    #image-file-input, #json-file-input, #md-file-input {
+      display: none;
+    }
+
+    .icon {
+      width: 14px;
+      height: 14px;
+      display: inline-block;
+      vertical-align: middle;
+      fill: currentColor;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-logo">G</div>
+      <div class="brand-title">
+        <span>GalFlow 剧本工坊</span>
+        <span style="color:var(--text-dim);font-weight:normal;">/</span>
+        <input type="text" id="project-title-input" class="project-name-input" value="樱花色的平行线 (Demo)" title="点击修改项目名称">
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-primary" id="btn-add-node" title="在画布中央添加新章节卡片">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        添加章节卡片
+      </button>
+
+      <button class="btn btn-accent" id="btn-import-markdown" title="导入Markdown格式的剧本文件或大纲">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+        导入Markdown剧本
+      </button>
+
+      <button class="btn btn-secondary" id="btn-auto-layout" title="根据分支与剧情走向自动层次排列流程图">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+        自动整理布局
+      </button>
+
+      <div class="divider-v"></div>
+
+      <button class="btn" id="btn-save-json" title="保存完整工程至本地JSON文件">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+        保存本地文件
+      </button>
+
+      <button class="btn" id="btn-load-json" title="打开先前保存的本地JSON工程文件">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+        打开本地文件
+      </button>
+
+      <button class="btn" id="btn-export-script" title="导出包含所有章节与台词的Markdown剧本文档">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+        导出剧本文档
+      </button>
+
+      <button class="btn btn-ghost" id="btn-reset-demo" title="重置并加载示范视觉小说工程">
+        重置样例
+      </button>
+
+      <div class="divider-v"></div>
+
+      <!-- THEME SEGMENTED PILL SWITCHER IN TOP RIGHT -->
+      <div class="theme-switch-pill" id="theme-switch-pill" title="切换日间暖白 / 夜间暗色主题">
+        <button type="button" class="theme-pill-btn" id="btn-theme-light" data-theme-val="light" title="切换至日间暖白色调">
+          ☀️ 暖白日间
+        </button>
+        <button type="button" class="theme-pill-btn" id="btn-theme-dark" data-theme-val="dark" title="切换至夜间暗色主题">
+          🌙 夜间暗色
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="app-main">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title-row">
+          <div class="sidebar-title">
+            <svg class="icon" style="color:var(--primary)" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+            章节大纲目录
+            <span class="badge-count" id="sidebar-node-count">0</span>
+          </div>
+          <button class="btn btn-ghost btn-icon" id="btn-new-chapter-sidebar" title="新建章节">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          </button>
+        </div>
+
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="chapter-search-input" placeholder="搜索章节、人物、地点、梗概...">
+        </div>
+
+        <div class="sidebar-filter-tabs">
+          <div class="filter-tab active" data-filter="all">全部</div>
+          <div class="filter-tab" data-filter="prologue">序章/共通</div>
+          <div class="filter-tab" data-filter="branch">分支线</div>
+          <div class="filter-tab" data-filter="ending">结局</div>
+        </div>
+      </div>
+
+      <div class="chapter-list" id="chapter-list"></div>
+
+      <div class="sidebar-footer">
+        单击目录定位 · 双击编辑详情
+      </div>
+    </aside>
+
+    <!-- SIDEBAR TOGGLE BUTTON -->
+    <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" title="展开/收起左侧大纲">
+      <svg class="icon" id="toggle-icon" viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    </button>
+
+    <!-- RIGHT INFINITE CANVAS -->
+    <div class="canvas-viewport" id="canvas-viewport">
+
+      <!-- HINTS BAR -->
+      <div class="canvas-hints">
+        <div class="hint-item"><span class="hint-key">拖拽空白</span> 平移画布</div>
+        <div class="hint-item"><span class="hint-key">滚轮</span> 缩放</div>
+        <div class="hint-item"><span class="hint-key">Shift+拖拽</span> 框选节点分组</div>
+        <div class="hint-item"><span class="hint-key">拖动圆点</span> 连线至目标章节</div>
+      </div>
+
+      <!-- FLOATING SELECTION ACTION BAR -->
+      <div class="selection-action-bar" id="selection-action-bar">
+        <span style="font-size:12px;font-weight:600;color:var(--text-main);" id="selection-count-text">已选中 0 个节点</span>
+        <div class="divider-v" style="height:16px;"></div>
+        <button class="btn btn-secondary" id="btn-group-selected" style="padding:4px 10px;font-size:12px;">
+          🏷️ 创建分组框
+        </button>
+        <button class="btn btn-ghost" id="btn-clear-selection" style="padding:4px 8px;font-size:12px;">
+          取消选中
+        </button>
+      </div>
+
+      <!-- MARQUEE RECTANGLE -->
+      <div class="marquee-selection-box" id="marquee-box"></div>
+
+      <!-- CANVAS WORLD -->
+      <div class="canvas-world" id="canvas-world">
+
+        <!-- GROUPS CONTAINER (BEHIND NODES) -->
+        <div class="groups-container" id="groups-container"></div>
+
+        <!-- SVG CONNECTION LAYER -->
+        <svg class="connections-svg" id="connections-svg">
+          <defs>
+            <marker id="arrow-default" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L9,3 z" fill="#64748b" />
+            </marker>
+            <marker id="arrow-branch" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L9,3 z" fill="#f59e0b" />
+            </marker>
+            <marker id="arrow-pink" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L9,3 z" fill="#ff5e97" />
+            </marker>
+            <marker id="arrow-purple" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L9,3 z" fill="#a855f7" />
+            </marker>
+            <marker id="arrow-cyan" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L9,3 z" fill="#06b6d4" />
+            </marker>
+          </defs>
+          <g id="connections-group"></g>
+          <path id="temp-drag-path" class="drag-line" d="" style="display:none;"></path>
+        </svg>
+
+        <!-- NODES CONTAINER -->
+        <div id="nodes-container"></div>
+      </div>
+
+      <!-- CANVAS CONTROLS -->
+      <div class="canvas-controls">
+        <button class="canvas-control-btn" id="btn-select-mode" title="框选模式开关 (快捷键: 按住Shift拖拽空白)">
+          ⛶
+        </button>
+        <button class="canvas-control-btn" id="btn-zoom-out" title="缩小">−</button>
+        <span class="zoom-text" id="zoom-text">100%</span>
+        <button class="canvas-control-btn" id="btn-zoom-in" title="放大">+</button>
+        <button class="canvas-control-btn" id="btn-zoom-fit" title="居中适合所有节点" style="width:auto;padding:0 8px;font-size:11px;">
+          居中适合
+        </button>
+      </div>
+
+      <!-- INTERACTIVE HORIZONTAL MINIMAP -->
+      <div class="minimap-container" id="minimap-container" title="点击或拖拽红框可在横向长图全景中快速移动视口">
+        <div class="minimap-header-row">
+          <span class="minimap-badge">全景导航</span>
+          <button type="button" class="minimap-expand-btn" id="btn-minimap-expand" title="放大/还原小地图横向视窗">⛶ 展开</button>
+        </div>
+        <div class="minimap-canvas" id="minimap-canvas">
+          <div class="minimap-viewport-rect" id="minimap-viewport-rect"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NODE DETAIL EDIT MODAL -->
+  <div class="modal-overlay" id="node-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span id="modal-color-dot" style="width:12px;height:12px;border-radius:50%;background:var(--primary);display:inline-block;"></span>
+          <span id="modal-header-title">编辑章节剧情与剧本</span>
+        </div>
+        <button class="btn btn-ghost btn-icon" id="btn-close-modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="modal-node-id">
+
+        <div class="form-row">
+          <div class="form-group" style="flex:2;">
+            <label class="form-label">章节名称 / 标题</label>
+            <input type="text" id="modal-title" class="form-input" placeholder="例如：第一章：樱花飘落的坡道">
+          </div>
+
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">路线类型</label>
+            <select id="modal-route-type" class="form-select">
+              <option value="prologue">序章 (Prologue)</option>
+              <option value="common">共通线 (Common)</option>
+              <option value="branch">关键分支 (Branch)</option>
+              <option value="route">个人线 (Route)</option>
+              <option value="ending">结局 (Ending)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">卡片主题色</label>
+            <select id="modal-color" class="form-select">
+              <option value="#ff5e97">粉色 (主角/主线)</option>
+              <option value="#6366f1">靛蓝 (共通/日常)</option>
+              <option value="#06b6d4">青色 (神秘/事件)</option>
+              <option value="#10b981">绿色 (青梅/轻松)</option>
+              <option value="#f59e0b">橙黄 (分歧/冲突)</option>
+              <option value="#8b5cf6">紫色 (终局/奇幻)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">登场人物 (逗号分隔)</label>
+            <input type="text" id="modal-characters" class="form-input" placeholder="男主(神崎), 千叶雪, 星野琉璃">
+          </div>
+          <div class="form-group">
+            <label class="form-label">场景与地点</label>
+            <input type="text" id="modal-location" class="form-input" placeholder="私立樱丘高中 · 天台">
+          </div>
+          <div class="form-group">
+            <label class="form-label">BGM / 配乐</label>
+            <input type="text" id="modal-bgm" class="form-input" placeholder="BGM01_Spring.mp3">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">剧情梗概 / 核心事件概况</label>
+          <textarea id="modal-summary" class="form-textarea" rows="3" placeholder="描述本章节发生的关键剧情脉络与情感转折..."></textarea>
+        </div>
+
+        <!-- IMAGE UPLOAD / PREVIEW URL -->
+        <div class="form-group">
+          <label class="form-label">章节预览图 / CG插画 (本地图片上传或网络链接)</label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="modal-image-url" class="form-input" style="flex:1;" placeholder="可粘贴图片URL或直接点击右侧上传本地图片...">
+            <button type="button" class="btn" id="btn-modal-upload-img">上传本地图片</button>
+            <button type="button" class="btn btn-ghost" id="btn-modal-clear-img">清除图片</button>
+          </div>
+        </div>
+
+        <!-- SCRIPT DIALOGUE SECTION -->
+        <div class="form-group">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <label class="form-label">详细剧本台词 / 对白草稿 (支持 角色名: 对话内容 格式)</label>
+            <span style="font-size:11px;color:var(--text-dim);">实时Galgame对话框预览</span>
+          </div>
+          <textarea id="modal-script" class="form-textarea" rows="4" placeholder="千叶雪: 阿树，走得太快啦！等等我啦！&#10;神崎: 是雪走得太慢了吧？新学期第一天可不能迟到。"></textarea>
+
+          <div class="gal-dialogue-preview">
+            <div class="gal-char-name-plate" id="preview-name-plate">角色名称</div>
+            <div class="gal-text-content" id="preview-dialogue-text">「对话内容将在此呈现Galgame样式的实时排版预览。」</div>
+          </div>
+        </div>
+
+        <!-- BRANCH CHOICES SETTINGS -->
+        <div class="form-group">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <label class="form-label">剧情分支选项设置</label>
+            <button type="button" class="btn btn-secondary" id="btn-modal-add-choice" style="font-size:11px;padding:3px 8px;">
+              + 添加选项
+            </button>
+          </div>
+          <table class="choices-edit-table">
+            <thead>
+              <tr>
+                <th style="width:40%;">选项文字描述</th>
+                <th style="width:25%;">好感度/条件标记</th>
+                <th style="width:25%;">跳转目标章节</th>
+                <th style="width:10%;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="modal-choices-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn" id="btn-cancel-modal">取消</button>
+        <button type="button" class="btn btn-primary" id="btn-save-modal">保存更改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GROUP EDIT MODAL -->
+  <div class="modal-overlay" id="group-modal">
+    <div class="modal-card" style="width:500px;">
+      <div class="modal-header">
+        <div class="modal-title">🏷️ 分组框设置</div>
+        <button class="btn btn-ghost btn-icon" id="btn-close-group-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="modal-group-id">
+
+        <div class="form-group">
+          <label class="form-label">分组名称</label>
+          <input type="text" id="modal-group-title" class="form-input" placeholder="例如：第一幕：序章与共通篇">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">分类标签 (Badge)</label>
+          <input type="text" id="modal-group-tag" class="form-input" placeholder="例如：核心剧情 / 关键分歧 / True Route">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">分组背景色风格</label>
+          <select id="modal-group-color" class="form-select">
+            <option value="pink">浪漫粉红 (rgba(255, 94, 151, 0.15))</option>
+            <option value="blue">星空湛蓝 (rgba(59, 130, 246, 0.15))</option>
+            <option value="purple">神秘紫罗兰 (rgba(168, 85, 247, 0.15))</option>
+            <option value="amber">黄昏琥珀 (rgba(245, 158, 11, 0.15))</option>
+            <option value="emerald">清新翠绿 (rgba(16, 185, 129, 0.15))</option>
+            <option value="dark">沉稳深灰 (rgba(30, 41, 59, 0.4))</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="btn-delete-group" style="color:#ef4444;margin-right:auto;">解散此分组</button>
+        <button type="button" class="btn" id="btn-cancel-group-modal">取消</button>
+        <button type="button" class="btn btn-primary" id="btn-save-group-modal">保存分组</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKDOWN IMPORT MODAL -->
+  <div class="modal-overlay" id="md-import-modal">
+    <div class="modal-card" style="width:780px;">
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg class="icon" style="color:var(--accent-green);width:18px;height:18px;" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+          导入Markdown格式剧本文件
+        </div>
+        <button class="btn btn-ghost btn-icon" id="btn-close-md-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.5;">
+          支持导入任意标准 Markdown 剧本文档。系统将智能识别 <code>## 章节名称</code>、<code>### 剧情梗概</code>、<code>- **角色**: ...</code> 以及分支跳转格式，并自动生成卡片与连线。
+        </div>
+
+        <div style="display:flex;gap:10px;align-items:center;">
+          <button type="button" class="btn btn-secondary" id="btn-select-md-file">
+            📁 选择本地 .md / .txt 剧本文件
+          </button>
+          <span style="font-size:11px;color:var(--text-dim);">或者直接在下方文本框中粘贴Markdown剧本内容：</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Markdown 剧本文本内容</label>
+          <textarea id="md-import-text" class="form-textarea" rows="12" style="font-family:monospace;font-size:12px;" placeholder="# 剧本名称&#10;&#10;## 第一章：坡道相遇&#10;- **路线分类**: 序章&#10;- **场景地点**: 樱花坡道&#10;- **出场人物**: 男主, 千叶雪&#10;&#10;### 剧情梗概&#10;新学期开始，男主在坡道与青梅竹马雪相遇。&#10;&#10;### 台词正文&#10;千叶雪: 早上好，阿树！&#10;神崎: 早上好。&#10;&#10;### 分支选项&#10;1. **和雪一起去学校** [好感+5] ➔ 跳转至: 第二章：走廊的分歧"></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">导入方式</label>
+            <select id="md-import-mode" class="form-select">
+              <option value="replace">清空当前画布并全新导入</option>
+              <option value="append">保留现有节点，追加到当前画布右侧</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">多级标题与层级框选设置</label>
+            <select id="md-group-mode" class="form-select">
+              <option value="children_boxed">分层为下属子节点建立独立框选（推荐，各层级分列零重叠）</option>
+              <option value="all_nested">父子包含式框选（将父节点与子节点一同框入同一大框）</option>
+              <option value="no_groups">仅生成独立卡片，不自动创建分组框</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" id="btn-cancel-md-modal">取消</button>
+        <button type="button" class="btn btn-primary" id="btn-do-import-md">开始解析并导入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIDDEN FILE INPUTS -->
+  <input type="file" id="image-file-input" accept="image/*">
+  <input type="file" id="json-file-input" accept=".json">
+  <input type="file" id="md-file-input" accept=".md,.markdown,.txt">
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toast"></div>
+
+  <!-- APPLICATION JAVASCRIPT -->
+  <script>
+    /**
+     * GalFlow Visual Novel Script Studio - Full Feature Single-Page App
+     */
+
+    // DEMO DATA WITH INITIAL CHAPTERS & GROUPS
+    const DEMO_PROJECT = {
+      title: "樱花色的平行线 (Demo)",
+      version: "1.1.0",
+      viewport: { x: 60, y: 50, scale: 0.8 },
+      groups: [
+        {
+          id: "group_1",
+          title: "第一幕：序章与共通篇",
+          tag: "共通线",
+          color: "blue",
+          nodeIds: ["node_1", "node_2"]
+        },
+        {
+          id: "group_2",
+          title: "第二幕：双线分支与结局走向",
+          tag: "核心分歧",
+          color: "pink",
+          nodeIds: ["node_3a", "node_3b", "node_4a", "node_4b"]
+        }
+      ],
+      nodes: [
+        {
+          id: "node_1",
+          title: "第一章：樱花飘落的坡道",
+          routeType: "prologue",
+          color: "#ff5e97",
+          x: 100,
+          y: 120,
+          characters: "神崎(男主), 千叶雪(青梅竹马)",
+          location: "通往学校的樱花坂道",
+          bgm: "BGM01_Spring_Breeze.mp3",
+          summary: "高二春季开学第一天。神崎在樱花纷飞的坡道上遇见了青梅竹马千叶雪。两人一边闲聊着升学的烦恼，一边走向新学期的校门。雪显得有些欲言又止。",
+          image: "svg:cherry_sakura",
+          script: "千叶雪: 阿树，走得太快啦！等等我啦！\n神崎: 是雪走得太慢了吧？新学期第一天迟到可就太难看了。\n千叶雪: 哼，明明是某人昨晚兴奋得睡不着，今天一早就催我出门！\n神崎: （看着樱花在晨光中飞舞，心中涌起一股预感，这注定是不平凡的一年）",
+          choices: [
+            { id: "c_1_1", text: "走上前帮雪整理被风吹乱的发丝", tag: "雪 好感度+5", target: "node_2" },
+            { id: "c_1_2", text: "打趣地拍拍她的书包加快步伐", tag: "常规推进", target: "node_2" }
+          ]
+        },
+        {
+          id: "node_2",
+          title: "第二章：走廊上的意外分歧",
+          routeType: "branch",
+          color: "#f59e0b",
+          x: 540,
+          y: 120,
+          characters: "神崎, 千叶雪, 星野琉璃(学姐)",
+          location: "旧校舍三楼走廊",
+          bgm: "BGM02_Corridor_Whisper.mp3",
+          summary: "午休时分，在旧校舍走廊前发生关键选择：是前往图书室归还上学期借的旧书并寻找学生会副会长星野学姐，还是遵守和千叶雪的约定去中庭吃便当？",
+          image: "svg:corridor_sunset",
+          script: "星野琉璃: （抱着厚重的文件从拐角走来，突然纸张散落了一地）啊……！\n千叶雪: （在楼梯口挥手呼唤）阿树，快点，中庭的长椅很快就会被占满的！\n神崎: （陷入两难的选择）",
+          choices: [
+            { id: "c_2_1", text: "立刻蹲下帮星野学姐收拾散落的文件", tag: "【星野学姐线】触发", target: "node_3a" },
+            { id: "c_2_2", text: "向学姐道歉并与雪一起前往中庭吃便当", tag: "【千叶雪线】触发", target: "node_3b" }
+          ]
+        },
+        {
+          id: "node_3a",
+          title: "第三章A：静谧图书室的红茶香气",
+          routeType: "route",
+          color: "#06b6d4",
+          x: 980,
+          y: -40,
+          characters: "神崎, 星野琉璃",
+          location: "旧校舍图书室深处",
+          bgm: "BGM03_Antique_Library.mp3",
+          summary: "帮助学姐整理完资料后，学姐邀请男主来到安静的图书室作为答谢。在红茶的香气中，星野学姐吐露了家庭对她报考名门大学的巨大压力，两人距离悄然拉近。",
+          image: "svg:library_tea",
+          script: "星野琉璃: 尝尝看吧，这是大吉岭红茶……平时的学生会办公室太吵了，只有这里能让我安静喘口气。\n神崎: 学姐总是把所有的期望一个人扛着呢。\n星野琉璃: （微微一怔，眼眸中闪烁着欣慰的光芒）阿树君……还真是个不可思议的人啊。",
+          choices: [
+            { id: "c_3a_1", text: "温柔握住学姐冰凉的手给予鼓励", tag: "进入学姐真结局", target: "node_4a" }
+          ]
+        },
+        {
+          id: "node_3b",
+          title: "第三章B：阳光中庭的柠檬味便当",
+          routeType: "route",
+          color: "#10b981",
+          x: 980,
+          y: 330,
+          characters: "神崎, 千叶雪",
+          location: "学校中庭紫藤花架下",
+          bgm: "BGM04_Sweet_Lunch.mp3",
+          summary: "紫藤花架下，千叶雪拿出了特地为神崎准备的玉子烧和炸鸡。雪半开玩笑半认真地询问男主对将来的打算，并表达了希望能一直在男主身边的愿望。",
+          image: "svg:lunch_bento",
+          script: "千叶雪: 来，张嘴！这是今天的特别份玉子烧！\n神崎: 唔……稍微有点甜呢。\n千叶雪: 甜点才好嘛！阿树，你说……我们高中毕业之后，还能像现在这样每天一起走吗？\n神崎: 雪……？",
+          choices: [
+            { id: "c_3b_1", text: "郑重承诺：无论去哪，我都会一直在你身边", tag: "进入青梅竹马真结局", target: "node_4b" }
+          ]
+        },
+        {
+          id: "node_4a",
+          title: "终章A：黄昏车站的约定",
+          routeType: "ending",
+          color: "#8b5cf6",
+          x: 1420,
+          y: -40,
+          characters: "神崎, 星野琉璃",
+          location: "海滨车站夕阳月台",
+          bgm: "BGM05_Sunset_Promise.mp3",
+          summary: "【星野琉璃 Route - True Ending: 琥珀色的飞鸟】学姐决定鼓起勇气追寻自己的天文学梦想。在夕阳洒满的月台上，两人定下了考入同一所大学的誓言与深情告白。",
+          image: "svg:train_sunset",
+          script: "星野琉璃: 列车快要进站了呢……阿树君，谢谢你给了我挣脱束缚的勇气。\n神崎: 学姐，明年的春天，我们大学再见。\n星野琉璃: （泪光中绽放出最灿烂的笑容）嗯！约好了，一定要再见！",
+          choices: []
+        },
+        {
+          id: "node_4b",
+          title: "终章B：永不褪色的青空回忆",
+          routeType: "ending",
+          color: "#ff5e97",
+          x: 1420,
+          y: 330,
+          characters: "神崎, 千叶雪",
+          location: "满开的樱花坂道·山顶展望台",
+          bgm: "BGM06_Endless_Sky.mp3",
+          summary: "【千叶雪 Route - True Ending: 永恒的青空】重返最初相遇的坡道。在落樱缤纷的山顶展望台上，十年的青梅竹马情愫终于化作彼此确认的深情拥抱。",
+          image: "svg:couple_sakura",
+          script: "千叶雪: 十年了呢，阿树……我一直一直，都在看着你。\n神崎: 我也是，雪。从很久以前开始，我的眼里就只有你。\n千叶雪: 太好了……真的，太好了。（紧紧相拥）",
+          choices: []
+        }
+      ]
+    };
+
+    // GENERATE BUILT-IN VECTOR ART PLACEHOLDERS
+    function generatePlaceholderSvg(theme) {
+      let bgGrad, elements;
+      if (theme === 'cherry_sakura') {
+        bgGrad = '<linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4a5568"/><stop offset="50%" stop-color="#f472b6"/><stop offset="100%" stop-color="#fbcfe8"/></linearGradient>';
+        elements = `
+          <rect width="100%" height="100%" fill="url(#g1)"/>
+          <path d="M0,150 Q100,110 200,130 T320,120 L320,150 L0,150 Z" fill="#374151" opacity="0.6"/>
+          <circle cx="260" cy="50" r="30" fill="#fff" opacity="0.8"/>
+          <path d="M50,40 Q55,30 65,40 Q55,50 50,40 Z" fill="#ff75a6" opacity="0.9"/>
+          <path d="M120,70 Q125,60 135,70 Q125,80 120,70 Z" fill="#ff75a6" opacity="0.9"/>
+          <path d="M210,30 Q215,20 225,30 Q215,40 210,30 Z" fill="#ff75a6" opacity="0.9"/>
+          <text x="160" y="85" font-family="sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.6))">🌸 樱花坂道 · 开学日</text>
+        `;
+      } else if (theme === 'corridor_sunset') {
+        bgGrad = '<linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ea580c"/><stop offset="60%" stop-color="#d97706"/><stop offset="100%" stop-color="#451a03"/></linearGradient>';
+        elements = `
+          <rect width="100%" height="100%" fill="url(#g2)"/>
+          <polygon points="0,0 120,40 120,110 0,150" fill="#fbbf24" opacity="0.25"/>
+          <line x1="120" y1="0" x2="120" y2="150" stroke="#78350f" stroke-width="3"/>
+          <text x="160" y="85" font-family="sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.6))">🌇 走廊夕景 · 分歧点</text>
+        `;
+      } else if (theme === 'library_tea') {
+        bgGrad = '<linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#1e293b"/></linearGradient>';
+        elements = `
+          <rect width="100%" height="100%" fill="url(#g3)"/>
+          <rect x="20" y="20" width="80" height="110" fill="#334155" rx="4"/>
+          <rect x="220" y="20" width="80" height="110" fill="#334155" rx="4"/>
+          <circle cx="160" cy="70" r="32" fill="#06b6d4" opacity="0.2"/>
+          <text x="160" y="75" font-family="sans-serif" font-size="13" font-weight="bold" fill="#67e8f9" text-anchor="middle">📖 图书馆 · 学姐线</text>
+          <text x="160" y="95" font-family="sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">红茶与静谧的心跳</text>
+        `;
+      } else if (theme === 'lunch_bento') {
+        bgGrad = '<linearGradient id="g4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#065f46"/><stop offset="50%" stop-color="#10b981"/><stop offset="100%" stop-color="#a7f3d0"/></linearGradient>';
+        elements = `
+          <rect width="100%" height="100%" fill="url(#g4)"/>
+          <circle cx="160" cy="65" r="40" fill="#ffffff" opacity="0.2"/>
+          <text x="160" y="75" font-family="sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">🍱 中庭午餐 · 青梅线</text>
+          <text x="160" y="95" font-family="sans-serif" font-size="11" fill="#ecfdf5" text-anchor="middle">紫藤花下的十指相扣</text>
+        `;
+      } else if (theme === 'train_sunset') {
+        bgGrad = '<linearGradient id="g5" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4c1d95"/><stop offset="60%" stop-color="#c026d3"/><stop offset="100%" stop-color="#fb7185"/></linearGradient>';
+        elements = `
+          <rect width="100%" height="100%" fill="url(#g5)"/>
+          <circle cx="80" cy="50" r="28" fill="#fef08a" opacity="0.8"/>
+          <text x="160" y="80" font-family="sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">✨ TRUE ENDING A</text>
+          <text x="160" y="100" font-family="sans-serif" font-size="11" fill="#fdf4ff" text-anchor="middle">月台上的誓约之吻</text>
+        `;
+      } else if (theme === 'couple_sakura') {
+        bgGrad = '<linearGradient id="g6" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#db2777"/><stop offset="70%" stop-color="#f43f5e"/><stop offset="100%" stop-color="#fda4af"/></linearGradient>';
+        elements = `
+          <rect width="100%" height="100%" fill="url(#g6)"/>
+          <text x="160" y="75" font-family="sans-serif" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">💖 TRUE ENDING B</text>
+          <text x="160" y="95" font-family="sans-serif" font-size="11" fill="#fff1f2" text-anchor="middle">永恒的青空回忆</text>
+        `;
+      } else {
+        bgGrad = '<linearGradient id="gdef" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>';
+        elements = `
+          <rect width="100%" height="100%" fill="url(#gdef)"/>
+          <text x="160" y="80" font-family="sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">点击上传本地CG预览图</text>
+        `;
+      }
+
+      const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 145">${bgGrad}${elements}</svg>`;
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+    }
+
+    function resolveImageSrc(img) {
+      if (!img) return generatePlaceholderSvg('default');
+      if (img.startsWith('svg:')) {
+        return generatePlaceholderSvg(img.replace('svg:', ''));
+      }
+      return img;
+    }
+
+    
+    // THEME SWITCHER LOGIC (DAY WARM WHITE / NIGHT DARK)
+    let currentTheme = localStorage.getItem('galflow_theme') || 'dark';
+
+    function applyTheme(theme) {
+      currentTheme = theme;
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('galflow_theme', theme);
+
+      const btnLight = document.getElementById('btn-theme-light');
+      const btnDark = document.getElementById('btn-theme-dark');
+      if (btnLight && btnDark) {
+        btnLight.classList.toggle('active', theme === 'light');
+        btnDark.classList.toggle('active', theme === 'dark');
+      }
+
+      renderGroups();
+      renderConnections();
+      updateMinimap();
+    }
+
+    // APPLICATION STATE
+    let project = JSON.parse(JSON.stringify(DEMO_PROJECT));
+    if (!project.groups) project.groups = [];
+
+    let activeFilter = 'all';
+    let searchQuery = '';
+    let selectedNodeIds = new Set();
+    let isPanning = false;
+    let panStart = { x: 0, y: 0 };
+    let dragNodesData = null; // Map or Object of starting coordinates
+    let connectingFrom = null; // { nodeId, choiceId, startX, startY }
+    let autoSaveTimer = null;
+    let isMarqueeSelecting = false;
+    let marqueeStart = { x: 0, y: 0 };
+    let isSelectMode = false;
+    let isDraggingMinimap = false;
+
+    // DOM ELEMENTS
+    const canvasViewport = document.getElementById('canvas-viewport');
+    const canvasWorld = document.getElementById('canvas-world');
+    const nodesContainer = document.getElementById('nodes-container');
+    const groupsContainer = document.getElementById('groups-container');
+    const connectionsGroup = document.getElementById('connections-group');
+    const tempDragPath = document.getElementById('temp-drag-path');
+    const zoomText = document.getElementById('zoom-text');
+    const chapterList = document.getElementById('chapter-list');
+    const sidebarNodeCount = document.getElementById('sidebar-node-count');
+    const projectTitleInput = document.getElementById('project-title-input');
+    const toastEl = document.getElementById('toast');
+    const minimapCanvas = document.getElementById('minimap-canvas');
+    const minimapViewportRect = document.getElementById('minimap-viewport-rect');
+    const marqueeBox = document.getElementById('marquee-box');
+    const selectionActionBar = document.getElementById('selection-action-bar');
+    const selectionCountText = document.getElementById('selection-count-text');
+
+    // INITIALIZATION
+    function initApp() {
+      const cached = localStorage.getItem('galflow_project_data_v2');
+      if (cached) {
+        try {
+          project = JSON.parse(cached);
+          if (!project.groups) project.groups = [];
+        } catch (e) {
+          console.error("Failed to parse cached project", e);
+        }
+      }
+
+      applyTheme(currentTheme);
+      projectTitleInput.value = project.title || "未命名视觉小说";
+      updateCanvasTransform();
+      renderAll();
+      setupEventListeners();
+      showToast("项目已加载就绪！", "info");
+    }
+
+    function showToast(msg, type = "info") {
+      toastEl.textContent = msg;
+      toastEl.className = 'toast show ' + (type === 'success' ? 'toast-success' : 'toast-info');
+      setTimeout(() => {
+        toastEl.className = 'toast';
+      }, 3000);
+    }
+
+    function triggerAutoSave() {
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(() => {
+        project.title = projectTitleInput.value;
+        localStorage.setItem('galflow_project_data_v2', JSON.stringify(project));
+      }, 400);
+    }
+
+    // CANVAS TRANSFORM
+    function updateCanvasTransform() {
+      const { x, y, scale } = project.viewport;
+      canvasWorld.style.transform = `matrix(${scale}, 0, 0, ${scale}, ${x}, ${y})`;
+      zoomText.textContent = `${Math.round(scale * 100)}%`;
+      updateMinimap();
+      triggerAutoSave();
+    }
+
+    // SCREEN TO WORLD & WORLD TO SCREEN CONVERSIONS
+    function screenToWorld(clientX, clientY) {
+      const rect = canvasViewport.getBoundingClientRect();
+      const x = (clientX - rect.left - project.viewport.x) / project.viewport.scale;
+      const y = (clientY - rect.top - project.viewport.y) / project.viewport.scale;
+      return { x, y };
+    }
+
+    function worldToScreen(worldX, worldY) {
+      const rect = canvasViewport.getBoundingClientRect();
+      return {
+        clientX: rect.left + project.viewport.x + worldX * project.viewport.scale,
+        clientY: rect.top + project.viewport.y + worldY * project.viewport.scale
+      };
+    }
+
+    // RENDER EVERYTHING
+    function renderAll() {
+      renderGroups();
+      renderNodes();
+      renderConnections();
+      renderSidebarList();
+      updateSelectionActionBar();
+      updateMinimap();
+    }
+
+    // RENDER GROUPS
+    function getGroupColors(colorName, isLight) {
+      if (isLight) {
+        const lightPalette = {
+          pink: { bg: 'rgba(244, 63, 94, 0.08)', border: 'rgba(244, 63, 94, 0.5)', tag: '#f43f5e' },
+          blue: { bg: 'rgba(59, 130, 246, 0.08)', border: 'rgba(59, 130, 246, 0.5)', tag: '#3b82f6' },
+          purple: { bg: 'rgba(168, 85, 247, 0.08)', border: 'rgba(168, 85, 247, 0.5)', tag: '#a855f7' },
+          amber: { bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.5)', tag: '#d97706' },
+          emerald: { bg: 'rgba(16, 185, 129, 0.08)', border: 'rgba(16, 185, 129, 0.5)', tag: '#059669' },
+          dark: { bg: 'rgba(100, 116, 139, 0.1)', border: 'rgba(100, 116, 139, 0.45)', tag: '#64748b' }
+        };
+        return lightPalette[colorName] || lightPalette.blue;
+      } else {
+        const darkPalette = {
+          pink: { bg: 'rgba(255, 94, 151, 0.12)', border: 'rgba(255, 94, 151, 0.4)', tag: '#ff5e97' },
+          blue: { bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.4)', tag: '#3b82f6' },
+          purple: { bg: 'rgba(168, 85, 247, 0.12)', border: 'rgba(168, 85, 247, 0.4)', tag: '#a855f7' },
+          amber: { bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.4)', tag: '#f59e0b' },
+          emerald: { bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.4)', tag: '#10b981' },
+          dark: { bg: 'rgba(30, 41, 59, 0.45)', border: 'rgba(71, 85, 105, 0.4)', tag: '#64748b' }
+        };
+        return darkPalette[colorName] || darkPalette.blue;
+      }
+    }
+
+    function renderGroups() {
+      groupsContainer.innerHTML = '';
+      if (!project.groups || project.groups.length === 0) return;
+
+      project.groups.forEach(group => {
+        // Compute bounding box around member nodes
+        const memberNodes = project.nodes.filter(n => group.nodeIds.includes(n.id));
+        if (memberNodes.length === 0) return;
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        memberNodes.forEach(n => {
+          minX = Math.min(minX, n.x);
+          minY = Math.min(minY, n.y);
+          const el = document.getElementById(`node-el-${n.id}`);
+          const h = el ? el.offsetHeight : 340;
+          maxX = Math.max(maxX, n.x + 320);
+          maxY = Math.max(maxY, n.y + h);
+        });
+
+        const padX = 28;
+        const padTop = 48; // room for group header
+        const padBottom = 28;
+
+        const gx = minX - padX;
+        const gy = minY - padTop;
+        const gw = (maxX - minX) + padX * 2;
+        const gh = (maxY - minY) + padTop + padBottom;
+
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        const colorCfg = getGroupColors(group.color, isLight);
+
+        const groupEl = document.createElement('div');
+        groupEl.className = 'canvas-group-box';
+        groupEl.id = `group-el-${group.id}`;
+        groupEl.style.left = `${gx}px`;
+        groupEl.style.top = `${gy}px`;
+        groupEl.style.width = `${gw}px`;
+        groupEl.style.height = `${gh}px`;
+        groupEl.style.background = colorCfg.bg;
+        groupEl.style.borderColor = colorCfg.border;
+
+        groupEl.innerHTML = `
+          <div class="group-header">
+            <div class="group-header-left">
+              <span class="group-tag-badge" style="background:${colorCfg.tag};">${escapeHtml(group.tag || '分组')}</span>
+              <input type="text" class="group-title-input" value="${escapeHtml(group.title)}" title="点击修改分组标题">
+            </div>
+            <div class="group-actions">
+              <button class="group-btn btn-edit-group" title="设置分组属性">⚙️</button>
+              <button class="group-btn btn-del-group" title="解散分组">✕</button>
+            </div>
+          </div>
+        `;
+
+        // Direct edit title
+        const titleInput = groupEl.querySelector('.group-title-input');
+        titleInput.addEventListener('input', (e) => {
+          group.title = e.target.value;
+          triggerAutoSave();
+        });
+
+        // Edit button
+        groupEl.querySelector('.btn-edit-group').addEventListener('click', (e) => {
+          e.stopPropagation();
+          openGroupModal(group.id);
+        });
+
+        // Delete group
+        groupEl.querySelector('.btn-del-group').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`确定要解散分组【${group.title}】吗？章节节点将被保留。`)) {
+            project.groups = project.groups.filter(g => g.id !== group.id);
+            renderAll();
+            triggerAutoSave();
+            showToast("已解散分组", "info");
+          }
+        });
+
+        // Drag group header moves all member nodes!
+        const header = groupEl.querySelector('.group-header');
+        header.addEventListener('mousedown', (e) => {
+          if (e.target.closest('.group-btn') || e.target.tagName === 'INPUT') return;
+          startGroupDrag(group, e);
+        });
+
+        groupsContainer.appendChild(groupEl);
+      });
+    }
+
+    function startGroupDrag(group, e) {
+      e.stopPropagation();
+      const memberNodes = project.nodes.filter(n => group.nodeIds.includes(n.id));
+      const startWorld = screenToWorld(e.clientX, e.clientY);
+      const initialPositions = memberNodes.map(n => ({ node: n, x: n.x, y: n.y }));
+
+      function onGroupMove(ev) {
+        const curWorld = screenToWorld(ev.clientX, ev.clientY);
+        const dx = curWorld.x - startWorld.x;
+        const dy = curWorld.y - startWorld.y;
+
+        initialPositions.forEach(item => {
+          item.node.x = Math.round(item.x + dx);
+          item.node.y = Math.round(item.y + dy);
+          const el = document.getElementById(`node-el-${item.node.id}`);
+          if (el) {
+            el.style.left = `${item.node.x}px`;
+            el.style.top = `${item.node.y}px`;
+          }
+        });
+
+        renderGroups();
+        renderConnections();
+        updateMinimap();
+      }
+
+      function onGroupUp() {
+        window.removeEventListener('mousemove', onGroupMove);
+        window.removeEventListener('mouseup', onGroupUp);
+        triggerAutoSave();
+      }
+
+      window.addEventListener('mousemove', onGroupMove);
+      window.addEventListener('mouseup', onGroupUp);
+    }
+
+    // RENDER NODES
+    function renderNodes() {
+      nodesContainer.innerHTML = '';
+      project.nodes.forEach(node => {
+        const el = createNodeElement(node);
+        nodesContainer.appendChild(el);
+      });
+    }
+
+    function createNodeElement(node) {
+      const card = document.createElement('div');
+      const isSel = selectedNodeIds.has(node.id);
+      card.className = `story-node ${isSel ? 'selected' : ''}`;
+      card.id = `node-el-${node.id}`;
+      card.style.left = `${node.x}px`;
+      card.style.top = `${node.y}px`;
+      card.dataset.id = node.id;
+
+      const nodeColor = node.color || '#ff5e97';
+
+      // Top Input Port
+      const inPort = document.createElement('div');
+      inPort.className = 'port port-in';
+      inPort.title = '剧情入口 (连线目标)';
+      inPort.dataset.portType = 'in';
+      inPort.dataset.nodeId = node.id;
+      card.appendChild(inPort);
+
+      // Node Header
+      const header = document.createElement('div');
+      header.className = 'node-header';
+      const levelBadge = node.level ? `<span class="node-level-badge">H${node.level}</span>` : '';
+      header.innerHTML = `
+        <div class="node-header-left">
+          <span class="node-color-indicator" style="background:${nodeColor};"></span>
+          <span class="node-title" title="${escapeHtml(node.title)}">${escapeHtml(node.title)}</span>
+          ${levelBadge}
+        </div>
+        <div class="node-header-actions">
+          <button class="node-btn btn-edit" title="编辑完整剧本与台词">✏️</button>
+          <button class="node-btn btn-clone" title="复制章节">📋</button>
+          <button class="node-btn btn-delete" title="删除章节">🗑️</button>
+        </div>
+      `;
+      card.appendChild(header);
+
+      // Preview Image
+      const preview = document.createElement('div');
+      preview.className = 'node-preview';
+      const imgSrc = resolveImageSrc(node.image);
+      preview.innerHTML = `
+        <img src="${imgSrc}" alt="${escapeHtml(node.title)}" loading="lazy">
+        <div class="node-preview-overlay">
+          <button class="preview-action-btn btn-change-img">更换预览图</button>
+        </div>
+      `;
+      card.appendChild(preview);
+
+      // Metadata
+      const meta = document.createElement('div');
+      meta.className = 'node-meta';
+      const metaItems = [];
+      if (node.characters) metaItems.push(`<span class="meta-tag" title="出场人物">👥 ${escapeHtml(node.characters)}</span>`);
+      if (node.location) metaItems.push(`<span class="meta-tag" title="场景地点">📍 ${escapeHtml(node.location)}</span>`);
+      if (node.bgm) metaItems.push(`<span class="meta-tag" title="配乐">🎵 ${escapeHtml(node.bgm)}</span>`);
+      meta.innerHTML = metaItems.join('');
+      if (metaItems.length > 0) card.appendChild(meta);
+
+      // Summary
+      const body = document.createElement('div');
+      body.className = 'node-body';
+      body.innerHTML = `
+        <div class="node-summary" title="${escapeHtml(node.summary || '双击编辑剧情梗概')}">
+          ${escapeHtml(node.summary || '双击编辑剧情梗概与详细剧本...')}
+        </div>
+      `;
+      card.appendChild(body);
+
+      // Choices or Default Output Port
+      if (node.choices && node.choices.length > 0) {
+        const choicesSec = document.createElement('div');
+        choicesSec.className = 'node-choices';
+        let choicesHtml = `<div class="choices-title"><span>分支选择</span><span>连线</span></div>`;
+        node.choices.forEach(ch => {
+          choicesHtml += `
+            <div class="choice-item" data-choice-id="${ch.id}">
+              <span class="choice-label" title="${escapeHtml(ch.text)}">${escapeHtml(ch.text)}</span>
+              <div class="choice-port-btn" data-port-type="choice-out" data-node-id="${node.id}" data-choice-id="${ch.id}" title="拖拽或点击此圆点连线至目标章节"></div>
+            </div>
+          `;
+        });
+        choicesSec.innerHTML = choicesHtml;
+        card.appendChild(choicesSec);
+      } else {
+        const outPort = document.createElement('div');
+        outPort.className = 'port port-out-default';
+        outPort.title = '剧情推进出口 (拖拽或点击连线至后续章节)';
+        outPort.dataset.portType = 'default-out';
+        outPort.dataset.nodeId = node.id;
+        card.appendChild(outPort);
+      }
+
+      // LISTENERS
+      header.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.node-btn')) return;
+        handleNodeDragStart(node, e);
+      });
+
+      card.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.port') || e.target.closest('.choice-port-btn')) return;
+        if (e.shiftKey) {
+          // Toggle selection
+          if (selectedNodeIds.has(node.id)) {
+            selectedNodeIds.delete(node.id);
+          } else {
+            selectedNodeIds.add(node.id);
+          }
+        } else {
+          if (!selectedNodeIds.has(node.id)) {
+            selectedNodeIds.clear();
+            selectedNodeIds.add(node.id);
+          }
+        }
+        updateNodeSelectionStyles();
+        updateSelectionActionBar();
+      });
+
+      card.addEventListener('dblclick', () => openNodeModal(node.id));
+
+      header.querySelector('.btn-edit').addEventListener('click', () => openNodeModal(node.id));
+      header.querySelector('.btn-clone').addEventListener('click', () => cloneNode(node.id));
+      header.querySelector('.btn-delete').addEventListener('click', () => deleteNode(node.id));
+
+      const changeImgBtn = preview.querySelector('.btn-change-img');
+      if (changeImgBtn) {
+        changeImgBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          promptImageUpload(node.id);
+        });
+      }
+
+      return card;
+    }
+
+    // MULTI-NODE SELECTION & DRAGGING
+    function handleNodeDragStart(clickedNode, e) {
+      if (!selectedNodeIds.has(clickedNode.id)) {
+        if (!e.shiftKey) selectedNodeIds.clear();
+        selectedNodeIds.add(clickedNode.id);
+        updateNodeSelectionStyles();
+        updateSelectionActionBar();
+      }
+
+      const startWorld = screenToWorld(e.clientX, e.clientY);
+      const nodesToDrag = project.nodes.filter(n => selectedNodeIds.has(n.id));
+      const initialPositions = nodesToDrag.map(n => ({ node: n, x: n.x, y: n.y }));
+
+      nodesToDrag.forEach(n => {
+        const el = document.getElementById(`node-el-${n.id}`);
+        if (el) el.classList.add('dragging');
+      });
+
+      function onMouseMove(ev) {
+        const curWorld = screenToWorld(ev.clientX, ev.clientY);
+        const dx = curWorld.x - startWorld.x;
+        const dy = curWorld.y - startWorld.y;
+
+        initialPositions.forEach(item => {
+          item.node.x = Math.round(item.x + dx);
+          item.node.y = Math.round(item.y + dy);
+          const el = document.getElementById(`node-el-${item.node.id}`);
+          if (el) {
+            el.style.left = `${item.node.x}px`;
+            el.style.top = `${item.node.y}px`;
+          }
+        });
+
+        renderConnections();
+        renderGroups();
+        updateMinimap();
+      }
+
+      function onMouseUp() {
+        nodesToDrag.forEach(n => {
+          const el = document.getElementById(`node-el-${n.id}`);
+          if (el) el.classList.remove('dragging');
+        });
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        triggerAutoSave();
+      }
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    }
+
+    function updateNodeSelectionStyles() {
+      document.querySelectorAll('.story-node').forEach(el => {
+        el.classList.toggle('selected', selectedNodeIds.has(el.dataset.id));
+      });
+      document.querySelectorAll('.chapter-item').forEach(el => {
+        el.classList.toggle('active', selectedNodeIds.has(el.dataset.id));
+      });
+    }
+
+    function updateSelectionActionBar() {
+      const count = selectedNodeIds.size;
+      if (count > 0) {
+        selectionCountText.textContent = `已选中 ${count} 个章节卡片`;
+        selectionActionBar.classList.add('visible');
+      } else {
+        selectionActionBar.classList.remove('visible');
+      }
+    }
+
+    // GROUP CREATION MODAL
+    document.getElementById('btn-group-selected').addEventListener('click', () => {
+      if (selectedNodeIds.size === 0) return;
+      openGroupModal(null, Array.from(selectedNodeIds));
+    });
+
+    document.getElementById('btn-clear-selection').addEventListener('click', () => {
+      selectedNodeIds.clear();
+      updateNodeSelectionStyles();
+      updateSelectionActionBar();
+    });
+
+    const groupModal = document.getElementById('group-modal');
+    const modalGroupId = document.getElementById('modal-group-id');
+    const modalGroupTitle = document.getElementById('modal-group-title');
+    const modalGroupTag = document.getElementById('modal-group-tag');
+    const modalGroupColor = document.getElementById('modal-group-color');
+
+    let currentGroupNodeIds = [];
+
+    function openGroupModal(groupId = null, initialNodeIds = []) {
+      if (groupId) {
+        const group = project.groups.find(g => g.id === groupId);
+        if (!group) return;
+        modalGroupId.value = group.id;
+        modalGroupTitle.value = group.title || '';
+        modalGroupTag.value = group.tag || '';
+        modalGroupColor.value = group.color || 'blue';
+        currentGroupNodeIds = group.nodeIds;
+        document.getElementById('btn-delete-group').style.display = 'block';
+      } else {
+        modalGroupId.value = '';
+        modalGroupTitle.value = `新剧情分组 ${project.groups.length + 1}`;
+        modalGroupTag.value = '主线章节';
+        modalGroupColor.value = 'pink';
+        currentGroupNodeIds = initialNodeIds;
+        document.getElementById('btn-delete-group').style.display = 'none';
+      }
+      groupModal.classList.add('open');
+    }
+
+    function closeGroupModal() {
+      groupModal.classList.remove('open');
+    }
+
+    document.getElementById('btn-close-group-modal').addEventListener('click', closeGroupModal);
+    document.getElementById('btn-cancel-group-modal').addEventListener('click', closeGroupModal);
+
+    document.getElementById('btn-save-group-modal').addEventListener('click', () => {
+      const gId = modalGroupId.value;
+      const title = modalGroupTitle.value.trim() || '未命名分组';
+      const tag = modalGroupTag.value.trim() || '分组';
+      const color = modalGroupColor.value;
+
+      if (gId) {
+        const g = project.groups.find(item => item.id === gId);
+        if (g) {
+          g.title = title;
+          g.tag = tag;
+          g.color = color;
+        }
+      } else {
+        const newGroup = {
+          id: 'group_' + Date.now(),
+          title: title,
+          tag: tag,
+          color: color,
+          nodeIds: currentGroupNodeIds
+        };
+        project.groups.push(newGroup);
+      }
+
+      closeGroupModal();
+      renderAll();
+      triggerAutoSave();
+      showToast("分组已成功保存！", "success");
+    });
+
+    document.getElementById('btn-delete-group').addEventListener('click', () => {
+      const gId = modalGroupId.value;
+      if (gId) {
+        project.groups = project.groups.filter(g => g.id !== gId);
+        closeGroupModal();
+        renderAll();
+        triggerAutoSave();
+        showToast("已解散分组", "info");
+      }
+    });
+
+    // RENDER CONNECTIONS & ARROWS (ACCURATE SVG COORDINATE ALIGNMENT)
+    function renderConnections() {
+      connectionsGroup.innerHTML = '';
+
+      project.nodes.forEach(sourceNode => {
+        const sourceEl = document.getElementById(`node-el-${sourceNode.id}`);
+        if (!sourceEl) return;
+
+        if (sourceNode.choices && sourceNode.choices.length > 0) {
+          sourceNode.choices.forEach(ch => {
+            if (ch.target) {
+              const targetNode = project.nodes.find(n => n.id === ch.target);
+              if (targetNode) {
+                drawCurve(sourceNode, targetNode, ch.id, ch.text, ch.tag || '分支');
+              }
+            }
+          });
+        } else if (sourceNode.defaultNext) {
+          const targetNode = project.nodes.find(n => n.id === sourceNode.defaultNext);
+          if (targetNode) {
+            drawCurve(sourceNode, targetNode, null, null, '剧情推进');
+          }
+        }
+      });
+    }
+
+    function drawCurve(sourceNode, targetNode, choiceId, labelText, tagText) {
+      const sourceEl = document.getElementById(`node-el-${sourceNode.id}`);
+      const targetEl = document.getElementById(`node-el-${targetNode.id}`);
+      if (!sourceEl || !targetEl) return;
+
+      let startX, startY;
+
+      // 1. Calculate source out-port coordinates (Right side port)
+      if (choiceId) {
+        // Choice branch output port (on the right edge of that choice row)
+        const choicePortEl = sourceEl.querySelector(`[data-choice-id="${choiceId}"][data-port-type="choice-out"]`);
+        if (choicePortEl) {
+          const portRect = choicePortEl.getBoundingClientRect();
+          const p = screenToWorld(portRect.left + portRect.width / 2, portRect.top + portRect.height / 2);
+          startX = p.x;
+          startY = p.y;
+        } else {
+          startX = sourceNode.x + 320;
+          startY = sourceNode.y + 120;
+        }
+      } else {
+        // Default progression output port (on the right vertical center of the card)
+        const defaultOutPortEl = sourceEl.querySelector('[data-port-type="default-out"]');
+        if (defaultOutPortEl) {
+          const portRect = defaultOutPortEl.getBoundingClientRect();
+          const p = screenToWorld(portRect.left + portRect.width / 2, portRect.top + portRect.height / 2);
+          startX = p.x;
+          startY = p.y;
+        } else {
+          startX = sourceNode.x + 320;
+          startY = sourceNode.y + (sourceEl.offsetHeight || 300) / 2;
+        }
+      }
+
+      // 2. Calculate target in-port coordinates (Left side vertical center of target card)
+      let endX, endY;
+      const inPortEl = targetEl.querySelector('[data-port-type="in"]');
+      if (inPortEl) {
+        const portRect = inPortEl.getBoundingClientRect();
+        const p = screenToWorld(portRect.left + portRect.width / 2, portRect.top + portRect.height / 2);
+        endX = p.x;
+        endY = p.y;
+      } else {
+        endX = targetNode.x;
+        endY = targetNode.y + (targetEl.offsetHeight || 300) / 2;
+      }
+
+      // 3. Horizontal Left-to-Right Bezier curve calculation
+      const dx = endX - startX;
+      const dy = endY - startY;
+
+      let pathD = '';
+      if (dx >= 30) {
+        // Target is forward to the right
+        const ctrl = Math.max(50, dx * 0.45);
+        pathD = `M ${startX} ${startY} C ${startX + ctrl} ${startY}, ${endX - ctrl} ${endY}, ${endX} ${endY}`;
+      } else {
+        // Target is in the same column (vertical siblings) or backwards:
+        // Curves out horizontally to the right, loops smoothly, and enters target from the left
+        const ctrlOut = Math.max(60, Math.min(240, Math.abs(dy) * 0.35 + 50));
+        pathD = `M ${startX} ${startY} C ${startX + ctrlOut} ${startY}, ${endX - ctrlOut} ${endY}, ${endX} ${endY}`;
+      }
+
+      let strokeClass = 'connection-line';
+      let markerId = 'arrow-default';
+
+      if (targetNode.routeType === 'ending') {
+        strokeClass += ' route-purple';
+        markerId = 'arrow-purple';
+      } else if (choiceId) {
+        strokeClass += ' route-branch';
+        markerId = 'arrow-branch';
+      }
+
+      const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      pathEl.setAttribute('d', pathD);
+      pathEl.setAttribute('class', strokeClass);
+      pathEl.setAttribute('marker-end', `url(#${markerId})`);
+      pathEl.title = `从【${sourceNode.title}】到【${targetNode.title}】 (点击可断开连线)`;
+
+      // Click to disconnect
+      pathEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`确认断开从【${sourceNode.title}】到【${targetNode.title}】的剧情连线？`)) {
+          if (choiceId) {
+            const ch = sourceNode.choices.find(c => c.id === choiceId);
+            if (ch) ch.target = null;
+          } else {
+            sourceNode.defaultNext = null;
+          }
+          renderConnections();
+          triggerAutoSave();
+          showToast("已解除连线关系", "info");
+        }
+      });
+
+      connectionsGroup.appendChild(pathEl);
+
+      // Midpoint badge
+      if (labelText || tagText) {
+        let midX = (startX + endX) / 2;
+        let midY = (startY + endY) / 2;
+        if (dx < 30) {
+          // Push badge slightly rightwards into the loop so it does not collide with card edge
+          midX = Math.max(startX, endX) + 40;
+        }
+        const displayLabel = labelText ? (labelText.length > 14 ? labelText.slice(0, 14) + '…' : labelText) : tagText;
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('transform', `translate(${midX}, ${midY})`);
+        g.style.cursor = 'pointer';
+
+        const textLen = (displayLabel.length * 11) + 16;
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', -textLen / 2);
+        rect.setAttribute('y', -10);
+        rect.setAttribute('width', textLen);
+        rect.setAttribute('height', 20);
+        rect.setAttribute('class', 'connection-badge-bg');
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('class', 'connection-label');
+        text.textContent = displayLabel;
+
+        g.appendChild(rect);
+        g.appendChild(text);
+
+        g.addEventListener('click', (e) => {
+          e.stopPropagation();
+          pathEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        });
+
+        connectionsGroup.appendChild(g);
+      }
+    }
+
+    // BULLETPROOF DRAG-AND-DROP & CLICK-TO-CONNECT WIRING LOGIC
+    function setupWiringSystem() {
+      // Mousedown on any output port starts wiring
+      canvasWorld.addEventListener('mousedown', (e) => {
+        const choicePort = e.target.closest('[data-port-type="choice-out"]');
+        const defaultOutPort = e.target.closest('[data-port-type="default-out"]');
+
+        if (!choicePort && !defaultOutPort) return;
+        e.stopPropagation();
+        e.preventDefault();
+
+        const portEl = choicePort || defaultOutPort;
+        const nodeId = portEl.dataset.nodeId;
+        const choiceId = portEl.dataset.choiceId || null;
+
+        const portRect = portEl.getBoundingClientRect();
+        const startPos = screenToWorld(portRect.left + portRect.width / 2, portRect.top + portRect.height / 2);
+
+        connectingFrom = {
+          nodeId,
+          choiceId,
+          portEl,
+          startX: startPos.x,
+          startY: startPos.y
+        };
+
+        portEl.classList.add('active-connecting');
+        tempDragPath.style.display = 'block';
+
+        let targetHighlightedNode = null;
+
+        function onWireMove(ev) {
+          if (!connectingFrom) return;
+          const curPos = screenToWorld(ev.clientX, ev.clientY);
+
+          const dx = curPos.x - connectingFrom.startX;
+          const dy = curPos.y - connectingFrom.startY;
+          let d = '';
+          if (dx >= 30) {
+            const ctrl = Math.max(50, dx * 0.45);
+            d = `M ${connectingFrom.startX} ${connectingFrom.startY} C ${connectingFrom.startX + ctrl} ${connectingFrom.startY}, ${curPos.x - ctrl} ${curPos.y}, ${curPos.x} ${curPos.y}`;
+          } else {
+            const ctrlOut = Math.max(60, Math.min(240, Math.abs(dy) * 0.35 + 50));
+            d = `M ${connectingFrom.startX} ${connectingFrom.startY} C ${connectingFrom.startX + ctrlOut} ${connectingFrom.startY}, ${curPos.x - ctrlOut} ${curPos.y}, ${curPos.x} ${curPos.y}`;
+          }
+          tempDragPath.setAttribute('d', d);
+
+          // Find candidate target node under cursor
+          const elUnder = document.elementFromPoint(ev.clientX, ev.clientY);
+          const targetCard = elUnder ? elUnder.closest('.story-node') : null;
+
+          if (targetCard && targetCard.dataset.id !== connectingFrom.nodeId) {
+            if (targetHighlightedNode !== targetCard) {
+              if (targetHighlightedNode) targetHighlightedNode.classList.remove('connect-target-highlight');
+              targetHighlightedNode = targetCard;
+              targetHighlightedNode.classList.add('connect-target-highlight');
+            }
+          } else {
+            if (targetHighlightedNode) {
+              targetHighlightedNode.classList.remove('connect-target-highlight');
+              targetHighlightedNode = null;
+            }
+          }
+        }
+
+        function onWireUp(ev) {
+          window.removeEventListener('mousemove', onWireMove);
+          window.removeEventListener('mouseup', onWireUp);
+
+          tempDragPath.style.display = 'none';
+          if (connectingFrom && connectingFrom.portEl) {
+            connectingFrom.portEl.classList.remove('active-connecting');
+          }
+          if (targetHighlightedNode) {
+            targetHighlightedNode.classList.remove('connect-target-highlight');
+          }
+
+          const elUnder = document.elementFromPoint(ev.clientX, ev.clientY);
+          const targetCard = elUnder ? elUnder.closest('.story-node') : null;
+
+          if (targetCard && connectingFrom) {
+            const targetNodeId = targetCard.dataset.id;
+            if (targetNodeId !== connectingFrom.nodeId) {
+              completeConnection(connectingFrom.nodeId, connectingFrom.choiceId, targetNodeId);
+            }
+          }
+
+          connectingFrom = null;
+        }
+
+        window.addEventListener('mousemove', onWireMove);
+        window.addEventListener('mouseup', onWireUp);
+      });
+    }
+
+    function completeConnection(sourceNodeId, choiceId, targetNodeId) {
+      const srcNode = project.nodes.find(n => n.id === sourceNodeId);
+      const tgtNode = project.nodes.find(n => n.id === targetNodeId);
+      if (!srcNode || !tgtNode) return;
+
+      if (choiceId) {
+        const ch = srcNode.choices.find(c => c.id === choiceId);
+        if (ch) ch.target = targetNodeId;
+      } else {
+        srcNode.defaultNext = targetNodeId;
+      }
+
+      renderConnections();
+      triggerAutoSave();
+      showToast(`已建立剧情连接：【${srcNode.title}】➔【${tgtNode.title}】`, "success");
+    }
+
+    // MARQUEE BOX SELECTION (SHIFT+DRAG ON CANVAS OR SELECT MODE)
+    function setupMarqueeSelection() {
+      canvasViewport.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.story-node') || e.target.closest('.canvas-controls') || e.target.closest('.minimap-container') || e.target.closest('.canvas-hints') || e.target.closest('.group-header') || e.target.closest('.connection-badge-bg')) {
+          return;
+        }
+
+        // Marquee select triggers when Shift is pressed OR isSelectMode is enabled
+        if (e.shiftKey || isSelectMode) {
+          isMarqueeSelecting = true;
+          canvasViewport.classList.add('selecting');
+          const vpRect = canvasViewport.getBoundingClientRect();
+          marqueeStart = {
+            screenX: e.clientX - vpRect.left,
+            screenY: e.clientY - vpRect.top,
+            clientX: e.clientX,
+            clientY: e.clientY
+          };
+
+          marqueeBox.style.left = `${marqueeStart.screenX}px`;
+          marqueeBox.style.top = `${marqueeStart.screenY}px`;
+          marqueeBox.style.width = '0px';
+          marqueeBox.style.height = '0px';
+          marqueeBox.style.display = 'block';
+
+          function onMarqueeMove(ev) {
+            if (!isMarqueeSelecting) return;
+            const curX = ev.clientX - vpRect.left;
+            const curY = ev.clientY - vpRect.top;
+
+            const boxLeft = Math.min(marqueeStart.screenX, curX);
+            const boxTop = Math.min(marqueeStart.screenY, curY);
+            const boxWidth = Math.abs(curX - marqueeStart.screenX);
+            const boxHeight = Math.abs(curY - marqueeStart.screenY);
+
+            marqueeBox.style.left = `${boxLeft}px`;
+            marqueeBox.style.top = `${boxTop}px`;
+            marqueeBox.style.width = `${boxWidth}px`;
+            marqueeBox.style.height = `${boxHeight}px`;
+
+            // Test intersection with all nodes
+            const worldTopLeft = screenToWorld(vpRect.left + boxLeft, vpRect.top + boxTop);
+            const worldBottomRight = screenToWorld(vpRect.left + boxLeft + boxWidth, vpRect.top + boxTop + boxHeight);
+
+            project.nodes.forEach(node => {
+              const el = document.getElementById(`node-el-${node.id}`);
+              const nodeH = el ? el.offsetHeight : 320;
+              const nodeR = node.x + 320;
+              const nodeB = node.y + nodeH;
+
+              const isOverlap = !(nodeR < worldTopLeft.x || node.x > worldBottomRight.x || nodeB < worldTopLeft.y || node.y > worldBottomRight.y);
+
+              if (isOverlap) {
+                selectedNodeIds.add(node.id);
+              } else if (!ev.shiftKey) {
+                // If not holding shift, only keep current box selection
+                // selectedNodeIds.delete(node.id);
+              }
+            });
+
+            updateNodeSelectionStyles();
+            updateSelectionActionBar();
+          }
+
+          function onMarqueeUp() {
+            isMarqueeSelecting = false;
+            canvasViewport.classList.remove('selecting');
+            marqueeBox.style.display = 'none';
+            window.removeEventListener('mousemove', onMarqueeMove);
+            window.removeEventListener('mouseup', onMarqueeUp);
+          }
+
+          window.addEventListener('mousemove', onMarqueeMove);
+          window.addEventListener('mouseup', onMarqueeUp);
+          return;
+        }
+
+        // Otherwise Normal Canvas Pan
+        isPanning = true;
+        canvasViewport.classList.add('panning');
+        panStart = {
+          x: e.clientX - project.viewport.x,
+          y: e.clientY - project.viewport.y
+        };
+
+        function onPanMove(ev) {
+          if (!isPanning) return;
+          project.viewport.x = ev.clientX - panStart.x;
+          project.viewport.y = ev.clientY - panStart.y;
+          updateCanvasTransform();
+        }
+
+        function onPanUp() {
+          isPanning = false;
+          canvasViewport.classList.remove('panning');
+          window.removeEventListener('mousemove', onPanMove);
+          window.removeEventListener('mouseup', onPanUp);
+        }
+
+        window.addEventListener('mousemove', onPanMove);
+        window.addEventListener('mouseup', onPanUp);
+      });
+    }
+
+    // INTERACTIVE HORIZONTAL TRANSLUCENT MINIMAP
+    function setupMinimapInteraction() {
+      const minimapContainer = document.getElementById('minimap-container');
+      const btnMinimapExpand = document.getElementById('btn-minimap-expand');
+      if (btnMinimapExpand) {
+        btnMinimapExpand.addEventListener('click', (e) => {
+          e.stopPropagation();
+          minimapContainer.classList.toggle('wide');
+          btnMinimapExpand.textContent = minimapContainer.classList.contains('wide') ? '✕ 收缩' : '⛶ 展开';
+          updateMinimap();
+        });
+      }
+
+      function getMinimapBounds() {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        project.nodes.forEach(n => {
+          minX = Math.min(minX, n.x);
+          minY = Math.min(minY, n.y);
+          maxX = Math.max(maxX, n.x + 320);
+          maxY = Math.max(maxY, n.y + 260);
+        });
+
+        const padX = 200;
+        const padY = 120;
+        minX -= padX; minY -= padY;
+        maxX += padX; maxY += padY;
+        const worldW = Math.max(1200, maxX - minX);
+        const worldH = Math.max(400, maxY - minY);
+
+        const mapW = minimapCanvas.clientWidth;
+        const mapH = minimapCanvas.clientHeight;
+        const scale = Math.min(mapW / worldW, mapH / worldH);
+
+        const contentW = worldW * scale;
+        const contentH = worldH * scale;
+        const offsetX = (mapW - contentW) / 2;
+        const offsetY = (mapH - contentH) / 2;
+
+        return { minX, minY, worldW, worldH, scale, offsetX, offsetY };
+      }
+
+      function moveViewportToMinimapPoint(clientX, clientY) {
+        const bounds = getMinimapBounds();
+        const mapRect = minimapCanvas.getBoundingClientRect();
+        const clickX = clientX - mapRect.left - bounds.offsetX;
+        const clickY = clientY - mapRect.top - bounds.offsetY;
+
+        const targetWorldX = bounds.minX + clickX / bounds.scale;
+        const targetWorldY = bounds.minY + clickY / bounds.scale;
+
+        const vpRect = canvasViewport.getBoundingClientRect();
+        project.viewport.x = vpRect.width / 2 - targetWorldX * project.viewport.scale;
+        project.viewport.y = vpRect.height / 2 - targetWorldY * project.viewport.scale;
+
+        updateCanvasTransform();
+      }
+
+      minimapCanvas.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        moveViewportToMinimapPoint(e.clientX, e.clientY);
+
+        isDraggingMinimap = true;
+
+        function onMiniMove(ev) {
+          if (!isDraggingMinimap) return;
+          moveViewportToMinimapPoint(ev.clientX, ev.clientY);
+        }
+
+        function onMiniUp() {
+          isDraggingMinimap = false;
+          window.removeEventListener('mousemove', onMiniMove);
+          window.removeEventListener('mouseup', onMiniUp);
+        }
+
+        window.addEventListener('mousemove', onMiniMove);
+        window.addEventListener('mouseup', onMiniUp);
+      });
+    }
+
+    function updateMinimap() {
+      if (!minimapCanvas || project.nodes.length === 0) return;
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      project.nodes.forEach(n => {
+        minX = Math.min(minX, n.x);
+        minY = Math.min(minY, n.y);
+        maxX = Math.max(maxX, n.x + 320);
+        maxY = Math.max(maxY, n.y + 260);
+      });
+
+      const padX = 200;
+      const padY = 120;
+      minX -= padX; minY -= padY;
+      maxX += padX; maxY += padY;
+      const worldW = Math.max(1200, maxX - minX);
+      const worldH = Math.max(400, maxY - minY);
+
+      const mapW = minimapCanvas.clientWidth;
+      const mapH = minimapCanvas.clientHeight;
+      const scale = Math.min(mapW / worldW, mapH / worldH);
+
+      const contentW = worldW * scale;
+      const contentH = worldH * scale;
+      const offsetX = (mapW - contentW) / 2;
+      const offsetY = (mapH - contentH) / 2;
+
+      // Render dots centered vertically inside the translucent horizontal minimap
+      const dotsHtml = project.nodes.map(n => {
+        const x = offsetX + (n.x - minX) * scale;
+        const y = offsetY + (n.y - minY) * scale;
+        const w = Math.max(3.5, 320 * scale);
+        const h = Math.max(6, 220 * scale);
+        const isSel = selectedNodeIds.has(n.id);
+        return `<div style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${h}px;background:${n.color || '#ff5e97'};border-radius:2px;opacity:${isSel ? 1 : 0.82};box-shadow:0 0 4px ${n.color || '#ff5e97'};${isSel ? 'outline:1.5px solid #fff;' : ''}"></div>`;
+      }).join('');
+
+      // Viewport rectangle centered vertically
+      const vpRect = canvasViewport.getBoundingClientRect();
+      const vpLeftWorld = -project.viewport.x / project.viewport.scale;
+      const vpTopWorld = -project.viewport.y / project.viewport.scale;
+      const vpWidthWorld = vpRect.width / project.viewport.scale;
+      const vpHeightWorld = vpRect.height / project.viewport.scale;
+
+      const vpX = offsetX + (vpLeftWorld - minX) * scale;
+      const vpY = offsetY + (vpTopWorld - minY) * scale;
+      const vpW = Math.max(18, vpWidthWorld * scale);
+      const vpH = Math.max(16, vpHeightWorld * scale);
+
+      minimapCanvas.innerHTML = dotsHtml + `
+        <div class="minimap-viewport-rect" style="left:${vpX}px;top:${vpY}px;width:${vpW}px;height:${vpH}px;"></div>
+      `;
+    }
+
+    // MARKDOWN SCRIPT PARSER & IMPORTER
+    const mdImportModal = document.getElementById('md-import-modal');
+    const mdImportText = document.getElementById('md-import-text');
+    const mdImportMode = document.getElementById('md-import-mode');
+    const mdFileInput = document.getElementById('md-file-input');
+
+    document.getElementById('btn-import-markdown').addEventListener('click', () => {
+      mdImportModal.classList.add('open');
+    });
+
+    document.getElementById('btn-close-md-modal').addEventListener('click', () => mdImportModal.classList.remove('open'));
+    document.getElementById('btn-cancel-md-modal').addEventListener('click', () => mdImportModal.classList.remove('open'));
+
+    document.getElementById('btn-select-md-file').addEventListener('click', () => {
+      mdFileInput.click();
+    });
+
+    mdFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        mdImportText.value = ev.target.result;
+        showToast("已成功载入Markdown文件内容", "info");
+      };
+      reader.readAsText(file);
+      mdFileInput.value = '';
+    });
+
+    // MULTI-LEVEL MARKDOWN SCRIPT PARSER (H1 ~ H6)
+    function parseMarkdownScript(mdText, groupMode = 'children_boxed') {
+      const lines = mdText.split(/\r?\n/);
+      const parsedNodes = [];
+      const stack = []; // array of { level, id, title }
+      let current = null;
+      let section = 'none';
+
+      // Semantic level theme colors
+      const LEVEL_COLORS = {
+        1: '#8b5cf6', // Royal Purple
+        2: '#3b82f6', // Ocean Blue
+        3: '#f59e0b', // Amber
+        4: '#ff5e97', // Pink
+        5: '#10b981', // Emerald
+        6: '#06b6d4'  // Cyan
+      };
+
+      for (let i = 0; i < lines.length; i++) {
+        const rawLine = lines[i];
+        const line = rawLine.trim();
+
+        // 1. Detect any Markdown Header (H1 ~ H6)
+        const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
+        if (headerMatch) {
+          const headerLevel = headerMatch[1].length;
+          const headerTitle = headerMatch[2].trim();
+
+          // Check if this is an internal metadata section keyword
+          const isMetaSection = /^(?:剧情梗概|剧情简介|梗概|台词正文|台词草稿|剧本正文|分支选项|分支选择|选项)$/.test(headerTitle);
+
+          if (isMetaSection && current) {
+            if (/^(?:剧情梗概|剧情简介|梗概)$/.test(headerTitle)) section = 'summary';
+            else if (/^(?:台词正文|台词草稿|剧本正文)$/.test(headerTitle)) section = 'script';
+            else if (/^(?:分支选项|分支选择|选项)$/.test(headerTitle)) section = 'choices';
+            continue;
+          }
+
+          // Any other header creates an independent chapter/scene node card!
+          while (stack.length > 0 && stack[stack.length - 1].level >= headerLevel) {
+            stack.pop();
+          }
+          const parentId = stack.length > 0 ? stack[stack.length - 1].id : null;
+
+          const nodeId = 'node_' + Date.now() + '_' + (parsedNodes.length + 1);
+
+          current = {
+            id: nodeId,
+            title: headerTitle,
+            level: headerLevel,
+            parentId: parentId,
+            routeType: headerLevel === 1 ? 'prologue' : (headerLevel === 2 ? 'common' : (headerLevel === 3 ? 'branch' : 'route')),
+            color: LEVEL_COLORS[headerLevel] || '#ff5e97',
+            characters: '',
+            location: '',
+            bgm: '',
+            summary: '',
+            script: '',
+            choices: [],
+            defaultNext: null,
+            image: headerLevel <= 2 ? 'svg:cherry_sakura' : (headerLevel === 3 ? 'svg:corridor_sunset' : 'svg:default'),
+            bodyLines: []
+          };
+
+          if (current.title.includes('序') || current.title.includes('大纲')) current.routeType = 'prologue';
+          else if (current.title.includes('分歧') || current.title.includes('选择')) current.routeType = 'branch';
+          else if (current.title.includes('结局') || current.title.includes('End') || current.title.includes('终章')) current.routeType = 'ending';
+
+          parsedNodes.push(current);
+          stack.push({ level: headerLevel, id: nodeId, title: headerTitle });
+          section = 'body';
+          continue;
+        }
+
+        if (!current) continue;
+
+        // 2. Parse Galgame script cues & metadata
+        if (/^-\s+\*\*路线分类\*\*[:：]\s*(.*)$/.test(line)) {
+          const val = line.match(/^-\s+\*\*路线分类\*\*[:：]\s*(.*)$/)[1].trim();
+          if (val.includes('序章')) current.routeType = 'prologue';
+          else if (val.includes('分歧')) current.routeType = 'branch';
+          else if (val.includes('结局')) current.routeType = 'ending';
+          else if (val.includes('个人')) current.routeType = 'route';
+          continue;
+        }
+        if (/^(?:-\s+\*\*场景地点\*\*|指定背景|场景|地点)[:：]\s*(.*)$/.test(line)) {
+          const m = line.match(/^(?:-\s+\*\*场景地点\*\*|指定背景|场景|地点)[:：]\s*(.*)$/);
+          current.location = m[1].replace(/\*\*/g, '').trim();
+          continue;
+        }
+        if (/^(?:-\s+\*\*出场人物\*\*|指定角色|登场角色|出场人物|角色)[:：]\s*(.*)$/.test(line)) {
+          const m = line.match(/^(?:-\s+\*\*出场人物\*\*|指定角色|登场角色|出场人物|角色)[:：]\s*(.*)$/);
+          current.characters = m[1].replace(/\*\*/g, '').trim();
+          continue;
+        }
+        if (/^(?:-\s+\*\*配乐BGM\*\*|BGM|配乐|音乐)[:：]\s*(.*)$/.test(line)) {
+          const m = line.match(/^(?:-\s+\*\*配乐BGM\*\*|BGM|配乐|音乐)[:：]\s*(.*)$/);
+          current.bgm = m[1].replace(/\*\*/g, '').trim();
+          continue;
+        }
+
+        // Choices parsing: 1. **选项** [标记] ➔ 跳转至: 目标
+        if (section === 'choices' || /^\d+\.\s+\*\*(.+?)\*\*/.test(line)) {
+          const choiceMatch = line.match(/^\d+\.\s+\*\*(.+?)\*\*(?:\s*\[(.*?)\])?(?:\s*(?:➔|->|>)+\s*跳转至[:：]\s*(.+))?/);
+          if (choiceMatch) {
+            current.choices.push({
+              id: 'c_' + Date.now() + '_' + current.choices.length,
+              text: choiceMatch[1].trim(),
+              tag: choiceMatch[2] ? choiceMatch[2].trim() : '',
+              targetTitle: choiceMatch[3] ? choiceMatch[3].trim() : null,
+              target: null
+            });
+            continue;
+          }
+        }
+
+        // Collect body lines
+        if (line && !line.startsWith('---')) {
+          current.bodyLines.push(rawLine);
+        }
+      }
+
+      // Finalize summary & script for each node
+      parsedNodes.forEach(node => {
+        if (node.bodyLines.length > 0) {
+          node.summary = node.bodyLines.slice(0, 2).join(' ').trim();
+          node.script = node.bodyLines.join('\n').trim();
+        }
+        if (!node.summary) {
+          node.summary = `H${node.level || 2} 层级节点：${node.title}`;
+        }
+      });
+
+      // Reconnect explicit choices targets
+      parsedNodes.forEach(node => {
+        node.choices.forEach(ch => {
+          if (ch.targetTitle) {
+            const tgt = parsedNodes.find(n => n.title.includes(ch.targetTitle) || ch.targetTitle.includes(n.title));
+            if (tgt) ch.target = tgt.id;
+          }
+        });
+      });
+
+      // Build parent-child tree mapping
+      const childrenMap = {};
+      parsedNodes.forEach(n => childrenMap[n.id] = []);
+      parsedNodes.forEach(n => {
+        if (n.parentId && childrenMap[n.parentId]) {
+          childrenMap[n.parentId].push(n.id);
+        }
+      });
+
+      // 1. Establish natural narrative flow across all parsed nodes in document order (horizontal progression)
+      const nodeMap = {};
+      parsedNodes.forEach(n => nodeMap[n.id] = n);
+
+      for (let i = 0; i < parsedNodes.length - 1; i++) {
+        const cur = parsedNodes[i];
+        const nxt = parsedNodes[i + 1];
+        if ((!cur.choices || cur.choices.length === 0) && !cur.defaultNext) {
+          cur.defaultNext = nxt.id;
+        }
+      }
+
+      // Automatically generate Group Boxes based on user setting
+      const generatedGroups = [];
+      const GROUP_PALETTE = ['blue', 'amber', 'pink', 'purple', 'emerald', 'dark'];
+      let colorIdx = 0;
+
+      if (groupMode !== 'no_groups') {
+        Object.entries(childrenMap).forEach(([pid, cIds]) => {
+          if (!pid || cIds.length === 0) return;
+          const pNode = nodeMap[pid];
+          if (!pNode) return;
+
+          const gColor = GROUP_PALETTE[colorIdx % GROUP_PALETTE.length];
+          colorIdx++;
+
+          const memberNodeIds = (groupMode === 'all_nested') ? [pNode.id, ...cIds] : cIds;
+
+          generatedGroups.push({
+            id: 'group_' + pNode.id,
+            title: `【${pNode.title}】下属层级（${cIds.length}项）`,
+            tag: `H${pNode.level + 1} 结构`,
+            color: gColor,
+            nodeIds: memberNodeIds
+          });
+        });
+      }
+
+      return { nodes: parsedNodes, groups: generatedGroups };
+    }
+
+    // HANDLE MARKDOWN IMPORT BUTTON CLICK
+    document.getElementById('btn-do-import-md').addEventListener('click', () => {
+      const text = mdImportText.value.trim();
+      if (!text) {
+        alert('请输入或载入Markdown剧本内容！');
+        return;
+      }
+
+      const groupMode = document.getElementById('md-group-mode').value;
+      const parsedResult = parseMarkdownScript(text, groupMode);
+      const parsedNodes = parsedResult.nodes;
+      const parsedGroups = parsedResult.groups;
+
+      if (parsedNodes.length === 0) {
+        alert('未能从文本中识别出章节！请确保文本包含 `# 标题` 或 `## 章节名称` 格式。');
+        return;
+      }
+
+      const mode = mdImportMode.value;
+      if (mode === 'replace') {
+        project.nodes = parsedNodes;
+        project.groups = parsedGroups;
+      } else {
+        let maxX = 100;
+        project.nodes.forEach(n => maxX = Math.max(maxX, n.x + 460));
+        parsedNodes.forEach((n, idx) => {
+          n.x = maxX + (n.level ? (n.level - 1) * 440 : 0);
+          n.y = 100 + idx * 360;
+          project.nodes.push(n);
+        });
+        project.groups = (project.groups || []).concat(parsedGroups);
+      }
+
+      autoLayoutFlowchart();
+      mdImportModal.classList.remove('open');
+      renderAll();
+      fitCanvasView();
+      triggerAutoSave();
+      showToast('已成功导入 ' + parsedNodes.length + ' 个层级卡片与 ' + parsedGroups.length + ' 个层级框选分组！', 'success');
+    });
+
+    // CHAPTER LIST (SIDEBAR) WITH TREE INDENTATION
+    function renderSidebarList() {
+      chapterList.innerHTML = '';
+      sidebarNodeCount.textContent = project.nodes.length;
+
+      let filtered = project.nodes.filter(node => {
+        if (activeFilter !== 'all') {
+          if (activeFilter === 'prologue' && node.routeType !== 'prologue' && node.routeType !== 'common') return false;
+          if (activeFilter === 'branch' && node.routeType !== 'branch' && node.routeType !== 'route') return false;
+          if (activeFilter === 'ending' && node.routeType !== 'ending') return false;
+        }
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          return (node.title || '').toLowerCase().includes(q) ||
+                 (node.characters || '').toLowerCase().includes(q) ||
+                 (node.location || '').toLowerCase().includes(q) ||
+                 (node.summary || '').toLowerCase().includes(q);
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        chapterList.innerHTML = `<div style="text-align:center;padding:30px 10px;color:var(--text-dim);font-size:12px;">无匹配章节</div>`;
+        return;
+      }
+
+      filtered.forEach(node => {
+        const item = document.createElement('div');
+        const isSel = selectedNodeIds.has(node.id);
+        const indentPx = node.level ? Math.max(0, (node.level - 1) * 14) : 0;
+        item.className = `chapter-item tree-node ${isSel ? 'active' : ''}`;
+        item.dataset.id = node.id;
+        item.style.marginLeft = `${indentPx}px`;
+
+        const tagCls = getTagClass(node.routeType, node.level);
+        const tagLbl = getTagLabel(node.routeType, node.level);
+
+        item.innerHTML = `
+          <div class="chapter-item-top">
+            <span class="chapter-tag ${tagCls}">${tagLbl}</span>
+            <span style="font-size:11px;color:var(--text-dim);">${node.choices ? node.choices.length : 0} 分支</span>
+          </div>
+          <div class="chapter-title-text" title="${escapeHtml(node.title)}">${escapeHtml(node.title)}</div>
+          <div class="chapter-desc-text">${escapeHtml(node.summary || '无剧情梗概')}</div>
+          <div class="chapter-item-footer">
+            <span>📍 ${escapeHtml(node.location || '未标注地点')}</span>
+            <span>👥 ${escapeHtml(node.characters ? node.characters.split(',')[0] : '全员')}</span>
+          </div>
+        `;
+
+        item.addEventListener('click', (e) => {
+          if (!e.shiftKey) selectedNodeIds.clear();
+          selectedNodeIds.add(node.id);
+          updateNodeSelectionStyles();
+          updateSelectionActionBar();
+          focusNodeInCanvas(node.id);
+        });
+
+        item.addEventListener('dblclick', () => openNodeModal(node.id));
+
+        chapterList.appendChild(item);
+      });
+    }
+
+    function getTagClass(type, level) {
+      if (level) {
+        if (level === 1) return 'tag-level-1';
+        if (level === 2) return 'tag-level-2';
+        if (level === 3) return 'tag-level-3';
+        if (level === 4) return 'tag-level-4';
+        if (level === 5) return 'tag-level-5';
+        if (level >= 6) return 'tag-level-6';
+      }
+      switch(type) {
+        case 'prologue': return 'tag-prologue';
+        case 'common': return 'tag-common';
+        case 'branch': return 'tag-branch';
+        case 'route': return 'tag-route';
+        case 'ending': return 'tag-ending';
+        default: return 'tag-common';
+      }
+    }
+
+    function getTagLabel(type, level) {
+      if (level) {
+        if (level === 1) return 'H1·篇章';
+        if (level === 2) return 'H2·章节';
+        if (level === 3) return 'H3·子章节';
+        if (level === 4) return 'H4·场次';
+        if (level === 5) return 'H5·小节';
+        if (level >= 6) return 'H6·片段';
+      }
+      switch(type) {
+        case 'prologue': return '序章';
+        case 'common': return '共通线';
+        case 'branch': return '关键分歧';
+        case 'route': return '个人线';
+        case 'ending': return '结局';
+        default: return '剧情';
+      }
+    }
+
+    function focusNodeInCanvas(nodeId) {
+      const node = project.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+
+      const rect = canvasViewport.getBoundingClientRect();
+      const targetScale = Math.max(0.75, project.viewport.scale);
+
+      project.viewport.scale = targetScale;
+      project.viewport.x = rect.width / 2 - (node.x + 160) * targetScale;
+      project.viewport.y = rect.height / 2 - (node.y + 120) * targetScale;
+
+      updateCanvasTransform();
+    }
+
+    // AUTO-LAYOUT ALGORITHM (HIERARCHICAL TREE & DAG HYBRID)
+    function autoLayoutFlowchart() {
+      if (project.nodes.length === 0) return;
+
+      const nodeMap = {};
+      project.nodes.forEach(n => nodeMap[n.id] = n);
+
+      // 1. Map each node to its primary group (if any)
+      const nodeToGroup = {};
+      if (project.groups && project.groups.length > 0) {
+        project.groups.forEach(g => {
+          (g.nodeIds || []).forEach(nid => {
+            if (nodeMap[nid] && !nodeToGroup[nid]) {
+              nodeToGroup[nid] = g.id;
+            }
+          });
+        });
+      }
+
+      const hasGroups = project.groups && project.groups.length > 0 && Object.keys(nodeToGroup).length > 0;
+
+      if (hasGroups) {
+        // CASCADING GROUP SEPARATION LAYOUT (FIGURE 2 STAIRCASE PATTERN)
+        const clusterSequence = [];
+        const visited = new Set();
+
+        // Follow natural narrative flow of nodes
+        project.nodes.forEach(n => {
+          if (visited.has(n.id)) return;
+          const gid = nodeToGroup[n.id];
+          if (gid) {
+            const g = project.groups.find(x => x.id === gid);
+            if (g) {
+              const memberNodes = (g.nodeIds || []).map(mid => nodeMap[mid]).filter(Boolean);
+              clusterSequence.push({ type: 'group', group: g, nodes: memberNodes });
+              memberNodes.forEach(m => visited.add(m.id));
+            } else {
+              clusterSequence.push({ type: 'standalone', node: n });
+              visited.add(n.id);
+            }
+          } else {
+            clusterSequence.push({ type: 'standalone', node: n });
+            visited.add(n.id);
+          }
+        });
+
+        let startX = 100;
+        let currentY = 120;
+        const COL_STEP = 460;
+        const ROW_STEP = 420;
+
+        clusterSequence.forEach(cluster => {
+          if (cluster.type === 'group') {
+            const cNodes = cluster.nodes;
+            cNodes.forEach((cn, idx) => {
+              cn.x = startX + idx * COL_STEP;
+              cn.y = currentY;
+            });
+            startX += Math.max(1, cNodes.length) * COL_STEP;
+            currentY += ROW_STEP;
+          } else {
+            const sn = cluster.node;
+            sn.x = startX;
+            sn.y = currentY;
+            startX += COL_STEP;
+            currentY += ROW_STEP;
+          }
+        });
+      } else {
+        // GENERAL DAG HORIZONTAL TOPOLOGICAL LAYOUT (FOR UNGROUPED PROJECTS / DEMO)
+        const adj = {};
+        const inDegree = {};
+        project.nodes.forEach(n => {
+          adj[n.id] = [];
+          inDegree[n.id] = 0;
+        });
+
+        project.nodes.forEach(n => {
+          if (n.choices && n.choices.length > 0) {
+            n.choices.forEach(ch => {
+              if (ch.target && nodeMap[ch.target]) {
+                adj[n.id].push(ch.target);
+                inDegree[ch.target]++;
+              }
+            });
+          }
+          if (n.defaultNext && nodeMap[n.defaultNext]) {
+            adj[n.id].push(n.defaultNext);
+            inDegree[n.defaultNext]++;
+          }
+        });
+
+        const ranks = {};
+        const startNodes = project.nodes.filter(n => inDegree[n.id] === 0);
+        const queue = (startNodes.length > 0 ? startNodes : [project.nodes[0]]).map(n => n.id);
+
+        queue.forEach(id => ranks[id] = 0);
+        project.nodes.forEach(n => {
+          if (ranks[n.id] === undefined) ranks[n.id] = 0;
+        });
+
+        const visited = new Set();
+        while (queue.length > 0) {
+          const u = queue.shift();
+          visited.add(u);
+          const curRank = ranks[u];
+          (adj[u] || []).forEach(v => {
+            if (ranks[v] === undefined || ranks[v] < curRank + 1) {
+              ranks[v] = curRank + 1;
+              if (!visited.has(v)) {
+                queue.push(v);
+              }
+            }
+          });
+        }
+
+        let maxRank = 0;
+        project.nodes.forEach(n => {
+          maxRank = Math.max(maxRank, ranks[n.id] || 0);
+        });
+
+        project.nodes.forEach(n => {
+          if (!visited.has(n.id)) {
+            maxRank += 1;
+            ranks[n.id] = maxRank;
+            const subQueue = [n.id];
+            while (subQueue.length > 0) {
+              const u = subQueue.shift();
+              visited.add(u);
+              const curR = ranks[u];
+              (adj[u] || []).forEach(v => {
+                if (ranks[v] === undefined || ranks[v] < curR + 1) {
+                  ranks[v] = curR + 1;
+                  maxRank = Math.max(maxRank, ranks[v]);
+                  if (!visited.has(v)) subQueue.push(v);
+                }
+              });
+            }
+          }
+        });
+
+        const columns = {};
+        project.nodes.forEach(n => {
+          const r = ranks[n.id] || 0;
+          if (!columns[r]) columns[r] = [];
+          columns[r].push(n);
+        });
+
+        const COL_STEP = 460;
+        const ROW_STEP = 380;
+        const startX = 100;
+        const startY = 120;
+
+        const sortedRanks = Object.keys(columns).map(Number).sort((a, b) => a - b);
+        sortedRanks.forEach(r => {
+          const colNodes = columns[r];
+          const count = colNodes.length;
+          const colHeight = (count - 1) * ROW_STEP;
+          const colStartY = (startY + 200) - (colHeight / 2);
+
+          colNodes.forEach((node, idx) => {
+            node.x = startX + r * COL_STEP;
+            node.y = Math.round(colStartY + idx * ROW_STEP);
+          });
+        });
+      }
+
+      renderAll();
+      fitCanvasView();
+      triggerAutoSave();
+      showToast('已自动按图2阶梯分行横向整理布局', 'success');
+    }
+
+
+    function fitCanvasView() {
+      if (project.nodes.length === 0) {
+        project.viewport = { x: 50, y: 50, scale: 1 };
+        updateCanvasTransform();
+        return;
+      }
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      project.nodes.forEach(n => {
+        minX = Math.min(minX, n.x);
+        minY = Math.min(minY, n.y);
+        maxX = Math.max(maxX, n.x + 340);
+        maxY = Math.max(maxY, n.y + 360);
+      });
+
+      const pad = 90;
+      const contentW = maxX - minX + pad * 2;
+      const contentH = maxY - minY + pad * 2;
+
+      const rect = canvasViewport.getBoundingClientRect();
+      const scaleX = rect.width / contentW;
+      const scaleY = rect.height / contentH;
+      const scale = Math.min(1.2, Math.max(0.25, Math.min(scaleX, scaleY)));
+
+      project.viewport.scale = scale;
+      project.viewport.x = (rect.width - (maxX - minX) * scale) / 2 - minX * scale;
+      project.viewport.y = (rect.height - (maxY - minY) * scale) / 2 - minY * scale;
+
+      updateCanvasTransform();
+    }
+
+    // CLONE & DELETE NODES
+    function cloneNode(nodeId) {
+      const src = project.nodes.find(n => n.id === nodeId);
+      if (!src) return;
+
+      const newId = 'node_' + Date.now();
+      const cloned = JSON.parse(JSON.stringify(src));
+      cloned.id = newId;
+      cloned.title = src.title + ' (副本)';
+      cloned.x = src.x + 60;
+      cloned.y = src.y + 60;
+      if (cloned.choices) {
+        cloned.choices.forEach(ch => {
+          ch.id = 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+          ch.target = null;
+        });
+      }
+      cloned.defaultNext = null;
+
+      project.nodes.push(cloned);
+      selectedNodeIds.clear();
+      selectedNodeIds.add(newId);
+      renderAll();
+      triggerAutoSave();
+      showToast(`已复制章节：${cloned.title}`, "success");
+    }
+
+    function deleteNode(nodeId) {
+      const node = project.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+
+      if (!confirm(`确定要删除章节【${node.title}】吗？`)) return;
+
+      project.nodes = project.nodes.filter(n => n.id !== nodeId);
+
+      project.nodes.forEach(n => {
+        if (n.defaultNext === nodeId) n.defaultNext = null;
+        if (n.choices) {
+          n.choices.forEach(ch => {
+            if (ch.target === nodeId) ch.target = null;
+          });
+        }
+      });
+
+      if (project.groups) {
+        project.groups.forEach(g => {
+          g.nodeIds = g.nodeIds.filter(id => id !== nodeId);
+        });
+      }
+
+      selectedNodeIds.delete(nodeId);
+      renderAll();
+      triggerAutoSave();
+      showToast("章节已删除", "info");
+    }
+
+    function addNewNode(initialProps = {}) {
+      const newId = 'node_' + Date.now();
+      const rect = canvasViewport.getBoundingClientRect();
+      const centerWorld = screenToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+      const newNode = {
+        id: newId,
+        title: initialProps.title || `新章节 ${project.nodes.length + 1}`,
+        routeType: initialProps.routeType || 'common',
+        color: initialProps.color || '#ff5e97',
+        x: Math.round(centerWorld.x - 160),
+        y: Math.round(centerWorld.y - 100),
+        characters: "主角",
+        location: "教室",
+        bgm: "BGM_Daily.mp3",
+        summary: "请在此处填写本章节的剧情梗概...",
+        image: "svg:default",
+        script: "主角: （今天也是平静的一天呢……）",
+        choices: [
+          { id: 'c_' + Date.now() + '_1', text: "分支选项 1", tag: "好感度+1", target: null }
+        ],
+        ...initialProps
+      };
+
+      project.nodes.push(newNode);
+      selectedNodeIds.clear();
+      selectedNodeIds.add(newId);
+      renderAll();
+      focusNodeInCanvas(newId);
+      triggerAutoSave();
+      showToast(`已创建章节：${newNode.title}`, "success");
+      return newNode;
+    }
+
+    // MODAL DIALOGUE EDITOR
+    const modalEl = document.getElementById('node-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalRouteType = document.getElementById('modal-route-type');
+    const modalColor = document.getElementById('modal-color');
+    const modalColorDot = document.getElementById('modal-color-dot');
+    const modalCharacters = document.getElementById('modal-characters');
+    const modalLocation = document.getElementById('modal-location');
+    const modalBgm = document.getElementById('modal-bgm');
+    const modalSummary = document.getElementById('modal-summary');
+    const modalImageUrl = document.getElementById('modal-image-url');
+    const modalScript = document.getElementById('modal-script');
+    const modalChoicesTbody = document.getElementById('modal-choices-tbody');
+    const modalNodeId = document.getElementById('modal-node-id');
+    const previewNamePlate = document.getElementById('preview-name-plate');
+    const previewDialogueText = document.getElementById('preview-dialogue-text');
+
+    function openNodeModal(nodeId) {
+      const node = project.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+
+      modalNodeId.value = node.id;
+      modalTitle.value = node.title || '';
+      modalRouteType.value = node.routeType || 'common';
+      modalColor.value = node.color || '#ff5e97';
+      modalColorDot.style.background = node.color || '#ff5e97';
+      modalCharacters.value = node.characters || '';
+      modalLocation.value = node.location || '';
+      modalBgm.value = node.bgm || '';
+      modalSummary.value = node.summary || '';
+      modalImageUrl.value = node.image && !node.image.startsWith('data:') && !node.image.startsWith('svg:') ? node.image : '';
+      modalScript.value = node.script || '';
+
+      updateDialoguePreview(node.script || '');
+      renderModalChoicesRows(node);
+
+      modalEl.classList.add('open');
+    }
+
+    function closeNodeModal() {
+      modalEl.classList.remove('open');
+    }
+
+    modalScript.addEventListener('input', () => {
+      updateDialoguePreview(modalScript.value);
+    });
+
+    function updateDialoguePreview(text) {
+      if (!text || !text.trim()) {
+        previewNamePlate.textContent = '旁白';
+        previewDialogueText.textContent = '「（场景静谧，等待剧本输入...）」';
+        return;
+      }
+
+      const lines = text.split('\n').filter(l => l.trim().length > 0);
+      const firstLine = lines[0] || '';
+      const match = firstLine.match(/^([^:：]+)[:：]\s*(.*)$/);
+      if (match) {
+        previewNamePlate.textContent = match[1].trim();
+        previewDialogueText.textContent = `「${match[2].trim()}」`;
+      } else {
+        previewNamePlate.textContent = '旁白';
+        previewDialogueText.textContent = firstLine;
+      }
+    }
+
+    modalColor.addEventListener('change', () => {
+      modalColorDot.style.background = modalColor.value;
+    });
+
+    function renderModalChoicesRows(node) {
+      modalChoicesTbody.innerHTML = '';
+      const choices = node.choices || [];
+
+      choices.forEach((ch) => {
+        const tr = document.createElement('tr');
+        tr.dataset.choiceId = ch.id;
+
+        let targetOptions = `<option value="">-- 未连接 (自由分支) --</option>`;
+        project.nodes.forEach(otherNode => {
+          if (otherNode.id !== node.id) {
+            const isSel = ch.target === otherNode.id ? 'selected' : '';
+            targetOptions += `<option value="${otherNode.id}" ${isSel}>${escapeHtml(otherNode.title)}</option>`;
+          }
+        });
+
+        tr.innerHTML = `
+          <td><input type="text" class="form-input ch-text-input" style="padding:4px 8px;font-size:12px;width:100%;" value="${escapeHtml(ch.text)}" placeholder="选项文字"></td>
+          <td><input type="text" class="form-input ch-tag-input" style="padding:4px 8px;font-size:12px;width:100%;" value="${escapeHtml(ch.tag || '')}" placeholder="好感度/标记"></td>
+          <td><select class="form-select ch-target-select" style="padding:4px 8px;font-size:12px;width:100%;">${targetOptions}</select></td>
+          <td style="text-align:center;"><button type="button" class="btn btn-ghost btn-icon ch-del-btn" style="color:#ef4444;" title="删除选项">✕</button></td>
+        `;
+
+        tr.querySelector('.ch-del-btn').addEventListener('click', () => tr.remove());
+        modalChoicesTbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('btn-modal-add-choice').addEventListener('click', () => {
+      const tr = document.createElement('tr');
+      const tempId = 'c_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+      tr.dataset.choiceId = tempId;
+
+      let targetOptions = `<option value="">-- 未连接 (自由分支) --</option>`;
+      project.nodes.forEach(otherNode => {
+        if (otherNode.id !== modalNodeId.value) {
+          targetOptions += `<option value="${otherNode.id}">${escapeHtml(otherNode.title)}</option>`;
+        }
+      });
+
+      tr.innerHTML = `
+        <td><input type="text" class="form-input ch-text-input" style="padding:4px 8px;font-size:12px;width:100%;" value="新分支选择" placeholder="选项文字"></td>
+        <td><input type="text" class="form-input ch-tag-input" style="padding:4px 8px;font-size:12px;width:100%;" value="" placeholder="好感度/标记"></td>
+        <td><select class="form-select ch-target-select" style="padding:4px 8px;font-size:12px;width:100%;">${targetOptions}</select></td>
+        <td style="text-align:center;"><button type="button" class="btn btn-ghost btn-icon ch-del-btn" style="color:#ef4444;" title="删除选项">✕</button></td>
+      `;
+
+      tr.querySelector('.ch-del-btn').addEventListener('click', () => tr.remove());
+      modalChoicesTbody.appendChild(tr);
+    });
+
+    document.getElementById('btn-save-modal').addEventListener('click', () => {
+      const nodeId = modalNodeId.value;
+      const node = project.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+
+      node.title = modalTitle.value.trim() || '未命名章节';
+      node.routeType = modalRouteType.value;
+      node.color = modalColor.value;
+      node.characters = modalCharacters.value.trim();
+      node.location = modalLocation.value.trim();
+      node.bgm = modalBgm.value.trim();
+      node.summary = modalSummary.value.trim();
+      node.script = modalScript.value.trim();
+
+      const newImgUrl = modalImageUrl.value.trim();
+      if (newImgUrl) node.image = newImgUrl;
+
+      const newChoices = [];
+      modalChoicesTbody.querySelectorAll('tr').forEach(tr => {
+        const chId = tr.dataset.choiceId;
+        const text = tr.querySelector('.ch-text-input').value.trim();
+        const tag = tr.querySelector('.ch-tag-input').value.trim();
+        const target = tr.querySelector('.ch-target-select').value;
+        if (text) {
+          newChoices.push({
+            id: chId,
+            text: text,
+            tag: tag,
+            target: target || null
+          });
+        }
+      });
+      node.choices = newChoices;
+
+      closeNodeModal();
+      renderAll();
+      triggerAutoSave();
+      showToast(`已保存章节【${node.title}】的修改`, "success");
+    });
+
+    document.getElementById('btn-close-modal').addEventListener('click', closeNodeModal);
+    document.getElementById('btn-cancel-modal').addEventListener('click', closeNodeModal);
+
+    // IMAGE UPLOAD LOGIC
+    let currentImageTargetNodeId = null;
+    const imageFileInput = document.getElementById('image-file-input');
+
+    function promptImageUpload(nodeId) {
+      currentImageTargetNodeId = nodeId;
+      imageFileInput.click();
+    }
+
+    document.getElementById('btn-modal-upload-img').addEventListener('click', () => {
+      currentImageTargetNodeId = modalNodeId.value;
+      imageFileInput.click();
+    });
+
+    document.getElementById('btn-modal-clear-img').addEventListener('click', () => {
+      modalImageUrl.value = '';
+      const node = project.nodes.find(n => n.id === modalNodeId.value);
+      if (node) {
+        node.image = 'svg:default';
+        renderAll();
+      }
+    });
+
+    imageFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64Data = ev.target.result;
+        if (currentImageTargetNodeId) {
+          const node = project.nodes.find(n => n.id === currentImageTargetNodeId);
+          if (node) {
+            node.image = base64Data;
+            modalImageUrl.value = '';
+            renderAll();
+            triggerAutoSave();
+            showToast("本地图片已嵌入保存！", "success");
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+      imageFileInput.value = '';
+    });
+
+    // FILE SAVE & LOAD (JSON & MARKDOWN EXPORT)
+    const jsonFileInput = document.getElementById('json-file-input');
+
+    document.getElementById('btn-save-json').addEventListener('click', () => {
+      project.title = projectTitleInput.value.trim() || '未命名视觉小说';
+      const jsonStr = JSON.stringify(project, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(project.title || 'galgame_project').replace(/\s+/g, '_')}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("项目已完整导出保存为JSON文件！", "success");
+    });
+
+    document.getElementById('btn-load-json').addEventListener('click', () => jsonFileInput.click());
+
+    jsonFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const loaded = JSON.parse(ev.target.result);
+          if (loaded.nodes && Array.isArray(loaded.nodes)) {
+            project = loaded;
+            if (!project.groups) project.groups = [];
+            applyTheme(currentTheme);
+      projectTitleInput.value = project.title || "未命名视觉小说";
+            selectedNodeIds.clear();
+            renderAll();
+            fitCanvasView();
+            triggerAutoSave();
+            showToast("本地工程已成功导入！", "success");
+          } else {
+            alert("文件格式不正确：缺少章节数据节点");
+          }
+        } catch (err) {
+          alert("无法解析该JSON文件：" + err.message);
+        }
+      };
+      reader.readAsText(file);
+      jsonFileInput.value = '';
+    });
+
+    document.getElementById('btn-export-script').addEventListener('click', () => {
+      let md = `# ${project.title || '视觉小说剧本'}\n\n`;
+      md += `> 导出时间: ${new Date().toLocaleString()}\n`;
+      md += `> 总章节数: ${project.nodes.length}\n\n---\n\n`;
+
+      project.nodes.forEach((node, i) => {
+        md += `## 章节 ${i + 1}：${node.title}\n\n`;
+        md += `- **路线分类**: ${getTagLabel(node.routeType)}\n`;
+        md += `- **场景地点**: ${node.location || '未标注'}\n`;
+        md += `- **出场人物**: ${node.characters || '全员'}\n`;
+        md += `- **配乐BGM**: ${node.bgm || '无'}\n\n`;
+        md += `### 剧情梗概\n${node.summary || '无'}\n\n`;
+
+        if (node.script) {
+          md += `### 台词正文\n\`\`\`\n${node.script}\n\`\`\`\n\n`;
+        }
+
+        if (node.choices && node.choices.length > 0) {
+          md += `### 分支选项\n`;
+          node.choices.forEach((ch, ci) => {
+            const tgtNode = project.nodes.find(n => n.id === ch.target);
+            const tgtTitle = tgtNode ? tgtNode.title : '（未连接）';
+            md += `${ci + 1}. **${ch.text}** [${ch.tag || '无标记'}] ➔ 跳转至: ${tgtTitle}\n`;
+          });
+          md += `\n`;
+        }
+
+        md += `---\n\n`;
+      });
+
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(project.title || 'Galgame_Script').replace(/\s+/g, '_')}_剧本文档.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("完整剧本已导出为Markdown！", "success");
+    });
+
+    // EVENT LISTENERS
+    function setupEventListeners() {
+      setupMarqueeSelection();
+      setupWiringSystem();
+      setupMinimapInteraction();
+
+      // Top Header Actions
+      document.getElementById('btn-theme-light').addEventListener('click', () => {
+        if (currentTheme !== 'light') {
+          applyTheme('light');
+          showToast('已切换至日间暖白色调', 'info');
+        }
+      });
+      document.getElementById('btn-theme-dark').addEventListener('click', () => {
+        if (currentTheme !== 'dark') {
+          applyTheme('dark');
+          showToast('已切换至夜间暗色主题', 'info');
+        }
+      });
+      document.getElementById('btn-add-node').addEventListener('click', () => addNewNode());
+      document.getElementById('btn-new-chapter-sidebar').addEventListener('click', () => addNewNode());
+      document.getElementById('btn-auto-layout').addEventListener('click', autoLayoutFlowchart);
+
+      // Select mode toggle button
+      const btnSelectMode = document.getElementById('btn-select-mode');
+      btnSelectMode.addEventListener('click', () => {
+        isSelectMode = !isSelectMode;
+        btnSelectMode.classList.toggle('active', isSelectMode);
+        showToast(isSelectMode ? "已开启框选模式：直接在画布空白拖拽即可框选" : "已恢复常规拖动画布模式", "info");
+      });
+
+      // Reset Demo
+      document.getElementById('btn-reset-demo').addEventListener('click', () => {
+        if (confirm("确定要重置并加载示范视觉小说工程吗？当前未保存内容将被覆盖。")) {
+          project = JSON.parse(JSON.stringify(DEMO_PROJECT));
+          projectTitleInput.value = project.title;
+          selectedNodeIds.clear();
+          renderAll();
+          fitCanvasView();
+          triggerAutoSave();
+          showToast("已恢复示范工程", "info");
+        }
+      });
+
+      // Zoom Controls
+      canvasViewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.909;
+        const newScale = Math.min(2.5, Math.max(0.2, project.viewport.scale * zoomFactor));
+
+        const rect = canvasViewport.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        project.viewport.x = mouseX - (mouseX - project.viewport.x) * (newScale / project.viewport.scale);
+        project.viewport.y = mouseY - (mouseY - project.viewport.y) * (newScale / project.viewport.scale);
+        project.viewport.scale = newScale;
+
+        updateCanvasTransform();
+      }, { passive: false });
+
+      document.getElementById('btn-zoom-in').addEventListener('click', () => {
+        project.viewport.scale = Math.min(2.5, project.viewport.scale * 1.2);
+        updateCanvasTransform();
+      });
+
+      document.getElementById('btn-zoom-out').addEventListener('click', () => {
+        project.viewport.scale = Math.max(0.2, project.viewport.scale * 0.83);
+        updateCanvasTransform();
+      });
+
+      document.getElementById('btn-zoom-fit').addEventListener('click', fitCanvasView);
+
+      // Project Title Change
+      projectTitleInput.addEventListener('input', triggerAutoSave);
+
+      // Sidebar Collapse
+      const sidebar = document.getElementById('sidebar');
+      const toggleBtn = document.getElementById('sidebar-toggle-btn');
+      const toggleIcon = document.getElementById('toggle-icon');
+      toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        toggleIcon.innerHTML = isCollapsed
+          ? '<path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>'
+          : '<path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>';
+      });
+
+      // Sidebar Search & Filter
+      const searchInput = document.getElementById('chapter-search-input');
+      searchInput.addEventListener('input', () => {
+        searchQuery = searchInput.value;
+        renderSidebarList();
+      });
+
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          activeFilter = tab.dataset.filter;
+          renderSidebarList();
+        });
+      });
+
+      // Keyboard Shortcuts
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeNodeModal();
+          closeGroupModal();
+          mdImportModal.classList.remove('open');
+        }
+        if ((e.key === 'Delete' || e.key === 'Backspace') && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+          if (selectedNodeIds.size > 0) {
+            if (confirm(`确定要删除选中的 ${selectedNodeIds.size} 个章节吗？`)) {
+              selectedNodeIds.forEach(id => {
+                project.nodes = project.nodes.filter(n => n.id !== id);
+              });
+              selectedNodeIds.clear();
+              renderAll();
+              triggerAutoSave();
+              showToast("选中的章节已删除", "info");
+            }
+          }
+        }
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
