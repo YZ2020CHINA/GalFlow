@@ -1,4 +1,4 @@
-# 🌸 GalFlow v1.0 — 视觉小说剧本与无限画布流程图整理工具
+# 🌸 GalFlow v1.1 — 视觉小说剧本与无限画布流程图整理工具
 
 **Visual Novel Script Studio & Infinite Canvas Flowchart Organizer | 視覺小說劇本與無限畫布流程圖整理工具 | ビジュアルノベル・シナリオ＆無限キャンバスフローチャート整理ツール**
 
