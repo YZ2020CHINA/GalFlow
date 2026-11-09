@@ -583,3 +583,7 @@ Project_Package.zip
     ├── GalFlow_使い方ガイド.md      （v1.12 機能一覧・ショートカットキー解説 Markdown 文書）
     └── GalFlow_使い方ガイド.txt     （v1.12 テキスト形式の使い方ガイド）
 ```
+
+## License / 许可证
+
+[MIT License](LICENSE). Copyright (c) 2026 YZ2020CHINA.
